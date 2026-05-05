@@ -1,4 +1,5 @@
 using SQLite;
+using System.Linq;
 
 public class LegoMinifigsRepository
 {
@@ -8,6 +9,15 @@ public class LegoMinifigsRepository
     {
         _db = database.Connection;
     }
+
+    public async Task<DateTime?> GetLatestModifiedAsync()
+{
+    var latest = await _db.Table<LegoMinifig>()
+        .OrderByDescending(x => x.LastModified)
+        .FirstOrDefaultAsync();
+
+    return latest?.LastModified;
+}
 
     public Task<List<LegoMinifig>> GetAllAsync()
         => _db.Table<LegoMinifig>().ToListAsync();
