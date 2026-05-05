@@ -26,15 +26,26 @@ public class RestService
 		{
 			LegoColors = new List<LegoColor>();
 
-			Uri uri = new Uri(string.Format("https://rebrickable.com/api/v3/lego/colors/?key=2d2ec2792fd89d2b412f795f5705ac5f", string.Empty));
+			//Uri uri = new Uri(string.Format("https://rebrickable.com/api/v3/lego/colors/?key=2d2ec2792fd89d2b412f795f5705ac5f", string.Empty));
+			string url;
+
+			url = "https://rebrickable.com/api/v3/lego/colors/?key=2d2ec2792fd89d2b412f795f5705ac5f&page_size=5000";
+
 			try
 			{
-				HttpResponseMessage response = await _client.GetAsync(uri);
+				HttpResponseMessage response = await _client.GetAsync(url);
 				if (response.IsSuccessStatusCode)
 				{
 					string content = await response.Content.ReadAsStringAsync();
 					var result = JsonSerializer.Deserialize<LegoColorResponse>(content, _serializerOptions);
-					LegoColors = result?.Results ?? new List<LegoColor>();
+					if (result != null)
+					{
+						LegoColors.AddRange(result.Results);
+
+						url = result.Next != null
+							? result.Next + "&key=2d2ec2792fd89d2b412f795f5705ac5f"
+							: null;
+					}
 				}
 			}
 			catch (Exception ex)

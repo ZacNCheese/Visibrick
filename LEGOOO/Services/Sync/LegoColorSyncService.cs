@@ -18,6 +18,7 @@ public class LegoColorSyncService
 
         foreach (var color in colors)
         {
+            Debug.WriteLine("UPSERTING COLOR: " + color.ColorName);
             await _repo.InsertOrReplaceAsync(color);
         }
     }
