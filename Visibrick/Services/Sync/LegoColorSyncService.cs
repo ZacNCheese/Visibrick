@@ -2,7 +2,7 @@ using System.Diagnostics;
 using VisiBrick;
 using System.Globalization;
 using System.IO.Compression;
-using Microsoft.Data.Sqlite;
+//using Microsoft.Data.Sqlite;
 
 public class LegoColorSyncService
 {
@@ -73,7 +73,7 @@ public class LegoColorSyncService
                     Id = int.Parse(cols[0], CultureInfo.InvariantCulture),
                     ColorName = cols[1],
                     ColorRGB = cols[2],
-                    Is_translucent = cols[3] == "t" ? 1 : 0
+                    Is_Transluscent = bool.TryParse(cols[3], out bool isTrans) && isTrans
                 });
             }
 

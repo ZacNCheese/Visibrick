@@ -12,7 +12,7 @@ public class LegoMinifigSyncService
         _repo = repo;
     }
 
-    public async Task SyncLegoMinifigsAsync()
+    /*public async Task SyncLegoMinifigsAsync()
     {
         Debug.WriteLine("Starting to grab minifigs...");
         var minifigs = await _api.GetLegoMinifigsAsync();
@@ -29,5 +29,5 @@ public class LegoMinifigSyncService
                 Debug.WriteLine("UPSERTING FIGURE: " + minifig.MinifigName);
             }
         }
-    }
+    }*/
 }
