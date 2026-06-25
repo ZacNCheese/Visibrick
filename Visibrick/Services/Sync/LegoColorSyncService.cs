@@ -30,7 +30,9 @@ public class LegoColorSyncService
 
     public async Task SyncLegoColorsAsync()
     {
-        var url = "https://cdn.rebrickable.com/media/downloads/colors.csv.gz?1782285120.1112702";
+        // Download the colors.csv.gz file from Rebrickable, Delete the existing colors in the database, and insert the new colors from the CSV file. After all data is inserted, delete the downloaded files and the temporary directory.
+
+        var url = "https://cdn.rebrickable.com/media/downloads/colors.csv.gz";
 
         var tempDir = Path.Combine(FileSystem.CacheDirectory, "rebrickable_colors");
         Directory.CreateDirectory(tempDir);
@@ -87,7 +89,7 @@ public class LegoColorSyncService
             if (File.Exists(gzPath)) File.Delete(gzPath);
             if (File.Exists(csvPath)) File.Delete(csvPath);
             if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-            Debug.WriteLine("DELETED FILES");
+            Debug.WriteLine("DELETED COLOR FILES");
         }
     }
 }
