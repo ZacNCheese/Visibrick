@@ -1,4 +1,4 @@
-﻿namespace LEGOOO;
+﻿namespace VisiBrick;
 
 public partial class AppShell : Shell
 {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace LEGOOO;
+namespace VisiBrick;
 
 public partial class App : Application
 {

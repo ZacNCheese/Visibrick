@@ -1,8 +1,8 @@
 ﻿<maui:MauiWinUIApplication
-    x:Class="LEGOOO.WinUI.App"
+    x:Class="VisiBrick.WinUI.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:maui="using:Microsoft.Maui"
-    xmlns:local="using:LEGOOO.WinUI">
+    xmlns:local="using:VisiBrick.WinUI">
 
 </maui:MauiWinUIApplication>

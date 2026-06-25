@@ -1,9 +1,9 @@
-LEGOOO/obj/Debug/net10.0-android/LEGOOO.AssemblyInfo.cs
-LEGOOO/obj/Debug/net10.0-android/LEGOOO.AssemblyInfoInputs.cache
-LEGOOO/obj/Debug/net10.0-ios/iossimulator-arm64/LEGOOO.AssemblyInfo.cs
-LEGOOO/obj/Debug/net10.0-ios/iossimulator-arm64/LEGOOO.AssemblyInfoInputs.cache
-LEGOOO/obj/Debug/net10.0-maccatalyst/maccatalyst-arm64/LEGOOO.AssemblyInfo.cs
-LEGOOO/obj/Debug/net10.0-maccatalyst/maccatalyst-arm64/LEGOOO.AssemblyInfoInputs.cache
+VisiBrick/obj/Debug/net10.0-android/VisiBrick.AssemblyInfo.cs
+VisiBrick/obj/Debug/net10.0-android/VisiBrick.AssemblyInfoInputs.cache
+VisiBrick/obj/Debug/net10.0-ios/iossimulator-arm64/VisiBrick.AssemblyInfo.cs
+VisiBrick/obj/Debug/net10.0-ios/iossimulator-arm64/VisiBrick.AssemblyInfoInputs.cache
+VisiBrick/obj/Debug/net10.0-maccatalyst/maccatalyst-arm64/VisiBrick.AssemblyInfo.cs
+VisiBrick/obj/Debug/net10.0-maccatalyst/maccatalyst-arm64/VisiBrick.AssemblyInfoInputs.cache
 
 # MAUI / .NET cleanup
 bin/

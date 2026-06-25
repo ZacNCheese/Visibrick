@@ -1,6 +1,6 @@
 ﻿using Foundation;
 
-namespace LEGOOO;
+namespace VisiBrick;
 
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate

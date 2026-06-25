@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using LEGOOO;
+using VisiBrick;
 
 public class LegoMinifigSyncService
 {

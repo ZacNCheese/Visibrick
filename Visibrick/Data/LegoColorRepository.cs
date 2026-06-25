@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using SQLite;
 
 public class LegoColorRepository
@@ -17,4 +18,18 @@ public class LegoColorRepository
 
     public Task InsertOrReplaceAsync(LegoColor color)
         => _db.InsertOrReplaceAsync(color);
+
+    public async Task ReplaceAllAsync(List<LegoColor> colors)
+    {
+        await _db.RunInTransactionAsync(conn =>
+        {
+            conn.DeleteAll<LegoColor>();
+            Debug.WriteLine("CLEARED COLORS");
+
+            foreach (var color in colors)
+            {
+                conn.Insert(color);
+            }
+        });
+    }
 }

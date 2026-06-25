@@ -4,7 +4,7 @@ using System.IO;
 using System.Diagnostics;
 using Microsoft.Maui.Storage;
 
-namespace LEGOOO;
+namespace VisiBrick;
 
 public static class MauiProgram
 {

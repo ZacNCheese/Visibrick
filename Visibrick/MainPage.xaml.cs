@@ -1,4 +1,4 @@
-﻿namespace LEGOOO;
+﻿namespace VisiBrick;
 using System.Text.Json;
 using System.Diagnostics;
 using Microsoft.Maui.Primitives;

@@ -1,7 +1,7 @@
 ﻿using ObjCRuntime;
 using UIKit;
 
-namespace LEGOOO;
+namespace VisiBrick;
 
 public class Program
 {
