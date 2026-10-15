@@ -1,0 +1,45 @@
+@* "Sign in to start your collection" with Apple, Google and email *@
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<div class="clay-card stack">
+    <img class="brand-mark" src="images/brand_mark.svg" alt="" />
+    <div class="stack" style="gap: 4px">
+        <h2 class="center">Sign in to start your collection</h2>
+        <p class="muted center">Your collection is saved to your account, so it's there on every device.</p>
+    </div>
+
+    <div class="stack" style="gap: 12px; margin-top: 8px">
+        <button class="btn btn-apple" disabled="@_busy" @onclick='() => StartAsync("apple")'>Continue with Apple</button>
+        <button class="btn btn-google" disabled="@_busy" @onclick='() => StartAsync("google")'>Continue with Google</button>
+        <p class="caption center">or</p>
+        <a class="btn btn-primary" href="signin">Continue with email</a>
+    </div>
+
+    @if (_error is not null)
+    {
+        <p class="error center">@_error</p>
+    }
+</div>
+
+@code {
+    private bool _busy;
+    private string? _error;
+
+    // Leaves the site for Google/Apple; they send the browser back to /auth/callback
+    private async Task StartAsync(string provider)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await Auth.StartProviderSignInAsync(provider);
+        }
+        catch (Exception ex)
+        {
+            _busy = false;
+            _error = "Sign-in didn't start. Please try again.";
+            Console.WriteLine(ex);
+        }
+    }
+}

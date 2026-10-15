@@ -1,0 +1,25 @@
+{
+  "name": "Visibrick",
+  "short_name": "Visibrick",
+  "description": "Track your LEGO collection, down to the last brick.",
+  "id": "./",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#EEE9FB",
+  "theme_color": "#512BD4",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    }
+  ]
+}

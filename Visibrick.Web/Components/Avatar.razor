@@ -1,0 +1,22 @@
+@* A round profile picture: the photo if there is one, otherwise initials, otherwise a person icon *@
+
+<div class="avatar" style="--size: @(Size)px">
+    @if (!string.IsNullOrEmpty(ImageUrl))
+    {
+        <img src="@ImageUrl" alt="" />
+    }
+    else if (!string.IsNullOrEmpty(Initials))
+    {
+        @Initials
+    }
+    else
+    {
+        @Icons.Person
+    }
+</div>
+
+@code {
+    [Parameter] public int Size { get; set; } = 44;
+    [Parameter] public string? ImageUrl { get; set; }
+    [Parameter] public string? Initials { get; set; }
+}

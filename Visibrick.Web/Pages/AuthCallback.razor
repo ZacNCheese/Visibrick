@@ -1,0 +1,48 @@
+@page "/auth/callback"
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+@* Where Supabase sends the browser back after Google/Apple sign-in, and after confirmation or
+   password-reset email links. This address must be in Supabase's Redirect URLs list. *@
+
+<PageTitle>Signing in · Visibrick</PageTitle>
+
+<div class="page form">
+    <div class="clay-card center stack">
+        @if (_error is null)
+        {
+            <span class="spinner" style="margin: 0 auto" aria-label="Signing in"></span>
+            <p class="muted">Signing you in…</p>
+        }
+        else
+        {
+            <h2>Sign-in didn't finish</h2>
+            <p class="muted">@_error</p>
+            <a class="btn btn-primary" href="collection">Try again</a>
+        }
+    </div>
+</div>
+
+@code {
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+        var (result, error) = await Auth.HandleCallbackAsync(Navigation.Uri);
+
+        switch (result)
+        {
+            case AuthCallbackResult.SignedIn:
+                // replace: true keeps the one-time code out of the browser's back history
+                Navigation.NavigateTo("collection", replace: true);
+                break;
+            case AuthCallbackResult.PasswordRecovery:
+                Navigation.NavigateTo("account/reset-password", replace: true);
+                break;
+            default:
+                _error = error;
+                break;
+        }
+    }
+}

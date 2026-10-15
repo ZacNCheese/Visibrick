@@ -1,0 +1,84 @@
+@* The profile picture in the top-right corner, and the menu it opens *@
+@implements IDisposable
+@inject AuthService Auth
+@inject ProfileService Profile
+@inject NavigationManager Navigation
+
+<div class="account">
+    <button class="press" title="Account" aria-label="Account menu" aria-expanded="@_open" @onclick="() => _open = !_open">
+        <Avatar ImageUrl="@(Auth.IsSignedIn ? Profile.AvatarUrl : null)" Initials="@(Auth.IsSignedIn ? Profile.Initials : null)" />
+    </button>
+
+    @if (_open)
+    {
+        @* Clicking anywhere outside the menu closes it *@
+        <div class="menu-backdrop" @onclick="() => _open = false"></div>
+
+        <div class="menu clay-card" role="menu">
+            @if (Auth.IsSignedIn)
+            {
+                var name = Profile.DisplayName ?? "";
+                var email = Auth.CurrentUser?.Email;
+
+                <div class="header">
+                    <Avatar ImageUrl="@Profile.AvatarUrl" Initials="@Profile.Initials" />
+                    <div>
+                        <div class="title">@name</div>
+                        @if (email is not null && email != name)
+                        {
+                            <div class="caption">@email</div>
+                        }
+                    </div>
+                </div>
+                <hr />
+                <button class="menu-item" role="menuitem" @onclick='() => Go("account")'>Profile settings</button>
+                <button class="menu-item" role="menuitem" @onclick='() => Go("collection")'>My collection</button>
+                <hr />
+                <button class="menu-item danger" role="menuitem" @onclick="SignOutAsync">Sign out</button>
+            }
+            else
+            {
+                <div class="header">
+                    <Avatar />
+                    <div>
+                        <div class="title">Not signed in</div>
+                        <div class="caption">Sign in to save your collection</div>
+                    </div>
+                </div>
+                <hr />
+                <button class="menu-item" role="menuitem" @onclick='() => Go("collection")'>Sign in or create account</button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _open;
+
+    protected override void OnInitialized()
+    {
+        Auth.Changed += OnChanged;
+        Profile.Changed += OnChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void Go(string page)
+    {
+        _open = false;
+        Navigation.NavigateTo(page);
+    }
+
+    private async Task SignOutAsync()
+    {
+        _open = false;
+        await Auth.SignOutAsync();
+        Navigation.NavigateTo("collection");
+    }
+
+    public void Dispose()
+    {
+        Auth.Changed -= OnChanged;
+        Profile.Changed -= OnChanged;
+    }
+}

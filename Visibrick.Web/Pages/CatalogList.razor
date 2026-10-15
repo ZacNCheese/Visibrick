@@ -1,0 +1,160 @@
+@page "/catalog/{Slug}"
+@implements IDisposable
+@inject CatalogService Catalog
+@inject CollectionService Collection
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+@* One catalog type (/catalog/sets etc.): search, a grid of items, and "Load more". The search is kept in the
+   address (?q=batman) so it survives a refresh and can be shared. *@
+
+<PageTitle>@(_type?.Name ?? "Catalog") · Visibrick</PageTitle>
+
+@if (_type is null)
+{
+    <div class="page narrow">
+        <h1>Not found</h1>
+        <p class="muted">There's no catalog called "@Slug". <a href="catalog">See the whole catalog</a>.</p>
+    </div>
+}
+else
+{
+    <div class="page">
+        <div class="page-header">
+            <a class="link-btn back" href="catalog">‹ Catalog</a>
+            <h1>@_type.Name</h1>
+            <p class="muted">@SummaryText</p>
+        </div>
+
+        <div class="toolbar">
+            <div class="input">
+                <input type="search" placeholder="Search by name or number" aria-label="Search @_type.Name"
+                       value="@Q" @oninput="OnSearchInput" />
+            </div>
+        </div>
+
+        @if (_error is not null)
+        {
+            <p class="error">@_error</p>
+        }
+        else if (_items.Count == 0 && !_loading)
+        {
+            <div class="clay-card center stack">
+                <h2>@(string.IsNullOrWhiteSpace(Q) ? $"No {_type.CountNoun} yet" : "No matches")</h2>
+                <p class="muted">
+                    @(string.IsNullOrWhiteSpace(Q)
+                        ? "They'll appear once the BrickLink catalog has been imported."
+                        : $"Nothing matches \"{Q}\". Try a different name or number.")
+                </p>
+            </div>
+        }
+
+        <div class="card-grid">
+            @foreach (var item in _items)
+            {
+                <ItemCard @key="item.Key" Item="item" />
+            }
+        </div>
+
+        <div class="load-more">
+            @if (_loading)
+            {
+                <span class="spinner" aria-label="Loading"></span>
+            }
+            else if (_items.Count < _total)
+            {
+                <button class="btn btn-primary" @onclick="LoadMoreAsync">Load more</button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private const int PageSize = 60;
+
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Q { get; set; }
+
+    private CatalogType? _type;
+    private readonly List<CatalogItem> _items = [];
+    private int _total;
+    private bool _loading;
+    private string? _error;
+    private string? _loadedFor;
+    private int _generation;
+    private CancellationTokenSource? _searchDelay;
+
+    private string SummaryText => _loading && _items.Count == 0
+        ? ""
+        : string.IsNullOrWhiteSpace(Q) ? $"{_total:N0} {_type!.CountNoun}" : $"{_total:N0} matching {_type!.CountNoun}";
+
+    protected override void OnInitialized()
+    {
+        Collection.Changed += OnCollectionChanged;
+        _ = Collection.EnsureLoadedAsync();
+    }
+
+    // Runs on first visit and whenever the address changes (another type, or a new search)
+    protected override async Task OnParametersSetAsync()
+    {
+        _type = CatalogRoutes.FromSlug(Slug);
+        var key = $"{Slug}|{Q}";
+        if (_type is null || key == _loadedFor)
+            return;
+
+        _loadedFor = key;
+        _items.Clear();
+        _total = 0;
+        await LoadMoreAsync();
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        var generation = ++_generation;
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            var (rows, total) = await Catalog.SearchAsync(_type!, Q, _items.Count, PageSize);
+
+            // A newer search started while this page was loading
+            if (generation != _generation)
+                return;
+
+            _items.AddRange(rows);
+            _total = total;
+        }
+        catch (AppException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            if (generation == _generation)
+                _loading = false;
+        }
+    }
+
+    // Wait until typing pauses, then put the search in the address (which reloads the list)
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        _searchDelay?.Cancel();
+        _searchDelay = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(300, _searchDelay.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        var text = e.Value?.ToString()?.Trim();
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("q", string.IsNullOrEmpty(text) ? null : text), replace: true);
+    }
+
+    private void OnCollectionChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Collection.Changed -= OnCollectionChanged;
+}

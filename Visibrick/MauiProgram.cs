@@ -29,6 +29,8 @@ public static class MauiProgram
 		Debug.WriteLine(dbPath);
 
 		// 🟢 REGISTER SERVICES
+		// Start the SQLite engine (from SQLitePCLRaw.bundle_e_sqlite3) before opening the database
+		SQLitePCL.Batteries_V2.Init();
 		builder.Services.AddSingleton(new AppDatabase(dbPath));
 		builder.Services.AddSingleton<CatalogRepository>();
 		builder.Services.AddSingleton<SupabaseCatalogClient>();

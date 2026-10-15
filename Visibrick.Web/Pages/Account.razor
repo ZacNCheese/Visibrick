@@ -1,0 +1,209 @@
+@page "/account"
+@implements IDisposable
+@inject AuthService Auth
+@inject ProfileService Profile
+@inject NavigationManager Navigation
+
+@* Profile settings, opened from the account menu in the top-right corner *@
+
+<PageTitle>Profile settings · Visibrick</PageTitle>
+
+<div class="page form">
+    <div class="page-header">
+        <h1>Profile settings</h1>
+    </div>
+
+    @if (!Auth.IsSignedIn)
+    {
+        <div class="clay-card stack center">
+            <p class="muted">You're not signed in.</p>
+            <a class="btn btn-primary" href="collection">Sign in</a>
+        </div>
+    }
+    else
+    {
+        var user = Auth.CurrentUser!;
+
+        <div class="stack" style="gap: 20px">
+            @* Photo *@
+            <div class="clay-card stack center">
+                <div style="margin: 0 auto"><Avatar Size="96" ImageUrl="@Profile.AvatarUrl" Initials="@Profile.Initials" /></div>
+                <div class="row" style="justify-content: center; gap: 20px">
+                    <label class="link-btn" style="cursor: pointer">
+                        Change photo
+                        <InputFile accept="image/jpeg,image/png,image/webp" style="display: none" OnChange="ChangePhotoAsync" />
+                    </label>
+                    @if (Profile.AvatarUrl is not null)
+                    {
+                        <button class="link-btn" @onclick="RemovePhotoAsync">Remove photo</button>
+                    }
+                </div>
+                @if (_photoMessage is not null)
+                {
+                    <p class="caption">@_photoMessage</p>
+                }
+            </div>
+
+            @* Display name *@
+            <form class="clay-card stack" @onsubmit="SaveNameAsync">
+                <h2>Display name</h2>
+                <div class="input">
+                    <input placeholder="Your name" maxlength="50" aria-label="Display name" @bind="_name" />
+                </div>
+                <div class="row">
+                    <span class="caption">@_nameMessage</span>
+                    <div class="spacer"></div>
+                    <button type="submit" class="link-btn">Save</button>
+                </div>
+            </form>
+
+            @* Account *@
+            <div class="clay-card stack" style="gap: 6px">
+                <h2>Account</h2>
+                <p class="muted">@user.Email</p>
+                <p class="caption">Signs in with @string.Join(" and ", user.Providers.Select(ProviderName))</p>
+            </div>
+
+            @* Password (email accounts only) *@
+            @if (user.HasPassword)
+            {
+                <form class="clay-card stack" @onsubmit="ChangePasswordAsync">
+                    <h2>Change password</h2>
+                    <div class="input">
+                        <input type="@(_showPassword ? "text" : "password")" placeholder="New password" autocomplete="new-password"
+                               aria-label="New password" @bind="_newPassword" />
+                        <button type="button" class="link-btn" @onclick="() => _showPassword = !_showPassword">@(_showPassword ? "Hide" : "Show")</button>
+                    </div>
+                    <div class="row">
+                        <span class="caption">@(_passwordMessage ?? "At least 8 characters.")</span>
+                        <div class="spacer"></div>
+                        <button type="submit" class="link-btn">Update password</button>
+                    </div>
+                </form>
+            }
+
+            <button class="btn btn-primary" @onclick="SignOutAsync">Sign out</button>
+
+            @* Delete account (two clicks: the first asks for confirmation) *@
+            <div class="clay-card stack" style="gap: 8px">
+                <h2>Delete account</h2>
+                <p class="muted">
+                    @(_confirmingDelete
+                        ? "Are you sure? Your account, profile and collection will be gone for good."
+                        : "Permanently deletes your account, profile and collection. This can't be undone.")
+                </p>
+                @if (_deleteMessage is not null)
+                {
+                    <p class="error">@_deleteMessage</p>
+                }
+                <button class="link-btn danger" style="align-self: flex-start" @onclick="DeleteAsync">
+                    @(_confirmingDelete ? "Yes, permanently delete my account" : "Delete my account")
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string _name = "";
+    private string _newPassword = "";
+    private bool _showPassword;
+    private bool _confirmingDelete;
+    private string? _photoMessage, _nameMessage, _passwordMessage, _deleteMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Auth.Changed += OnChanged;
+        Profile.Changed += OnProfileChanged;
+        await Auth.InitializeAsync();
+        await Profile.EnsureLoadedAsync();
+        _name = Profile.CustomName ?? "";
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnProfileChanged() => InvokeAsync(() =>
+    {
+        if (string.IsNullOrEmpty(_name))
+            _name = Profile.CustomName ?? "";
+        StateHasChanged();
+    });
+
+    private async Task ChangePhotoAsync(InputFileChangeEventArgs e)
+        => _photoMessage = await RunAsync("Uploading…", "Photo updated.", () => Profile.UploadAvatarAsync(e.File));
+
+    private async Task RemovePhotoAsync()
+        => _photoMessage = await RunAsync("Removing…", "Photo removed.", Profile.RemoveAvatarAsync);
+
+    private async Task SaveNameAsync()
+        => _nameMessage = await RunAsync("Saving…", "Saved.", () => Profile.UpdateDisplayNameAsync(_name));
+
+    private async Task ChangePasswordAsync()
+    {
+        if (_newPassword.Length < 8)
+        {
+            _passwordMessage = "Use at least 8 characters.";
+            return;
+        }
+
+        _passwordMessage = await RunAsync("Updating…", "Password updated.", async () =>
+        {
+            await Auth.ChangePasswordAsync(_newPassword);
+            _newPassword = "";
+        });
+    }
+
+    private async Task SignOutAsync()
+    {
+        await Auth.SignOutAsync();
+        Navigation.NavigateTo("collection");
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (!_confirmingDelete)
+        {
+            _confirmingDelete = true;
+            return;
+        }
+
+        try
+        {
+            await Profile.DeleteUploadedAvatarAsync();
+            await Auth.DeleteAccountAsync();
+            Navigation.NavigateTo("collection");
+        }
+        catch (AppException ex)
+        {
+            _deleteMessage = ex.Message;
+        }
+    }
+
+    // Runs an action and returns the message to show: done, or the error
+    private async Task<string> RunAsync(string progress, string done, Func<Task> action)
+    {
+        try
+        {
+            await action();
+            return done;
+        }
+        catch (AppException ex)
+        {
+            return ex.Message;
+        }
+    }
+
+    private static string ProviderName(string provider) => provider switch
+    {
+        "email" => "email and password",
+        "google" => "Google",
+        "apple" => "Apple",
+        _ => provider
+    };
+
+    public void Dispose()
+    {
+        Auth.Changed -= OnChanged;
+        Profile.Changed -= OnProfileChanged;
+    }
+}

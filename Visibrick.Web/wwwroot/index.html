@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Visibrick</title>
+    <meta name="description" content="Track your LEGO collection, down to the last brick." />
+    <base href="/" />
+    <link rel="preload" id="webassembly" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link href="Visibrick.Web.styles.css" rel="stylesheet" />
+
+    <!-- Browser tab, home-screen and installed-app icons -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link href="manifest.webmanifest" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+
+    <!-- Status bar color on phones, matching light and dark mode; full-screen when added to the iPhone home screen -->
+    <meta name="theme-color" content="#EEE9FB" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#191226" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Visibrick" />
+    <script type="importmap"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Shown while the app downloads; Blazor replaces it -->
+        <div class="loading-screen">
+            <img src="images/brand_mark.svg" alt="" />
+            <span class="muted">Loading Visibrick…</span>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Something went wrong.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+</body>
+
+</html>

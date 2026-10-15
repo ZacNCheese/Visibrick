@@ -8,3 +8,6 @@ obj/
 
 # BrickLink catalog downloads (re-downloaded from bricklink.com; imported by Visibrick.Sync)
 data/bricklink/*.txt
+
+# Website build output (dotnet publish Visibrick.Web -c Release -o publish)
+publish/

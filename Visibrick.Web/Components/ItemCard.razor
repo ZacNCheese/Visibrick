@@ -1,0 +1,61 @@
+@* One catalog item card: tap it to open the item, tap + to add it to your collection,
+   tap the number to open it on BrickLink. Used by the catalog lists and My Collection. *@
+@inject AuthService Auth
+@inject CollectionService Collection
+@inject ToastService Toast
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div style="position: relative">
+    <a class="item-card clay-card press" href="@CatalogRoutes.Item(Item.Type, Item.Number)">
+        <div class="image well">
+            <img class="placeholder" src="images/item_placeholder.svg" alt="" />
+            <img class="photo" src="@Item.ImageUrl" alt="@Item.Name" loading="lazy" onerror="this.style.display='none'" />
+        </div>
+        <div class="name" title="@Item.Name">@Item.Name</div>
+        <div class="footer">
+            <span class="chip" title="Open on BrickLink" @onclick="OpenBrickLinkAsync" @onclick:preventDefault @onclick:stopPropagation>@Item.Number ↗</span>
+            <span class="caption">@Item.YearReleased</span>
+        </div>
+    </a>
+
+    @* Outside the link so clicking it doesn't also open the item *@
+    @if (Quantity > 0)
+    {
+        <a class="badge owned press" style="top: 18px; right: 18px" href="@CatalogRoutes.Item(Item.Type, Item.Number)"
+           title="In your collection" aria-label="In your collection: @Quantity">@(Quantity > 1 ? $"×{Quantity}" : "✓")</a>
+    }
+    else
+    {
+        <button class="badge add press" style="top: 18px; right: 18px" title="Add to my collection" aria-label="Add to my collection"
+                @onclick="AddAsync">+</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CatalogItem Item { get; set; } = default!;
+
+    private int Quantity => Collection.QuantityOf(Item.Type, Item.Number);
+
+    private async Task AddAsync()
+    {
+        if (!Auth.IsSignedIn)
+        {
+            Toast.Show("Sign in to start your collection.");
+            Navigation.NavigateTo("collection");
+            return;
+        }
+
+        try
+        {
+            await Collection.AddOneAsync(Item.Type, Item.Number);
+        }
+        catch (AppException ex)
+        {
+            Toast.Show("Couldn't add it: " + ex.Message);
+        }
+    }
+
+    private async Task OpenBrickLinkAsync()
+        => await JS.InvokeVoidAsync("open", Item.BrickLinkUrl, "_blank", "noopener");
+}

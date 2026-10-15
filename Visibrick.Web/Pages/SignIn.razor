@@ -1,0 +1,150 @@
+@page "/signin"
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+@* Email sign-in and account creation (Google and Apple are on My Collection) *@
+
+<PageTitle>@(_creating ? "Create account" : "Sign in") · Visibrick</PageTitle>
+
+<div class="page form">
+    <div class="page-header">
+        <a class="link-btn back" href="collection">‹ My Collection</a>
+        <h1>@(_creating ? "Create account" : "Sign in")</h1>
+        <p class="muted">@(_creating ? "Start tracking your LEGO collection." : "Welcome back. Sign in with your email.")</p>
+    </div>
+
+    <form class="stack" style="gap: 20px" @onsubmit="SubmitAsync">
+        <div class="field">
+            <label for="email">Email</label>
+            <div class="input">
+                <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required @bind="_email" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="password">Password</label>
+            <div class="input">
+                <input id="password" type="@(_showPassword ? "text" : "password")" required
+                       autocomplete="@(_creating ? "new-password" : "current-password")"
+                       minlength="@(_creating ? MinPasswordLength : 1)" @bind="_password" />
+                <button type="button" class="link-btn" @onclick="() => _showPassword = !_showPassword">@(_showPassword ? "Hide" : "Show")</button>
+            </div>
+            @if (_creating)
+            {
+                <p class="caption">At least @MinPasswordLength characters. A longer phrase is stronger than a short, complex one.</p>
+            }
+        </div>
+
+        @if (_error is not null)
+        {
+            <p class="error">@_error</p>
+        }
+        @if (_info is not null)
+        {
+            <p class="muted">@_info</p>
+        }
+
+        <button type="submit" class="btn btn-primary" disabled="@_busy">
+            @if (_busy)
+            {
+                <span class="spinner"></span>
+            }
+            else
+            {
+                @(_creating ? "Create account" : "Sign in")
+            }
+        </button>
+
+        <div class="stack center" style="gap: 4px">
+            @if (!_creating)
+            {
+                <button type="button" class="link-btn" disabled="@_busy" @onclick="ForgotAsync">Forgot your password?</button>
+            }
+            <button type="button" class="link-btn" disabled="@_busy" @onclick="SwitchMode">
+                @(_creating ? "Already have an account? Sign in" : "New to Visibrick? Create an account")
+            </button>
+        </div>
+    </form>
+</div>
+
+@code {
+    // Matches the minimum password length to set in Supabase (Authentication → Providers → Email)
+    private const int MinPasswordLength = 8;
+
+    private bool _creating;
+    private bool _showPassword;
+    private bool _busy;
+    private string _email = "";
+    private string _password = "";
+    private string? _error;
+    private string? _info;
+
+    private void SwitchMode()
+    {
+        _creating = !_creating;
+        _error = _info = null;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_creating && _password.Length < MinPasswordLength)
+        {
+            _error = $"Use at least {MinPasswordLength} characters for your password.";
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            if (!_creating)
+            {
+                await Auth.SignInWithEmailAsync(_email, _password);
+                Navigation.NavigateTo("collection");
+            }
+            else if (await Auth.SignUpWithEmailAsync(_email, _password))
+            {
+                Navigation.NavigateTo("collection");
+            }
+            else
+            {
+                // Email confirmation is on: they sign in after clicking the link
+                _creating = false;
+                _password = "";
+                _info = $"Almost done! We sent a confirmation link to {_email}. Click it and you'll be signed in.";
+            }
+        });
+    }
+
+    private async Task ForgotAsync()
+    {
+        if (!_email.Contains('@'))
+        {
+            _error = "Enter your email address above first, then choose \"Forgot your password?\" again.";
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            await Auth.SendPasswordResetAsync(_email);
+            // Same message whether or not the account exists, so this can't reveal who has signed up
+            _info = $"If there's an account for {_email}, we've emailed a link to reset the password.";
+        });
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _error = _info = null;
+        try
+        {
+            await action();
+        }
+        catch (AppException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -1,0 +1,160 @@
+@page "/item"
+@implements IDisposable
+@inject CatalogService Catalog
+@inject CollectionService Collection
+@inject AuthService Auth
+@inject IJSRuntime JS
+
+@* One catalog item: /item?type=S&number=75192-1 *@
+
+<PageTitle>@(_item?.Name ?? "Item") · Visibrick</PageTitle>
+
+<div class="page narrow">
+    <div class="page-header">
+        <a class="link-btn back" href="javascript:history.back()">‹ Back</a>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="center"><span class="spinner" aria-label="Loading"></span></div>
+    }
+    else if (_item is null)
+    {
+        <div class="clay-card center stack">
+            <h2>Item not found</h2>
+            <p class="muted">@(_error ?? $"BrickLink's catalog doesn't have \"{Number}\".") <a href="catalog">Browse the catalog</a>.</p>
+        </div>
+    }
+    else
+    {
+        var type = CatalogType.FromCode(_item.Type);
+        var quantity = Collection.QuantityOf(_item.Type, _item.Number);
+
+        <div class="stack" style="gap: 22px">
+            <div class="clay-card item-hero">
+                <div class="well">
+                    <img class="placeholder" src="images/item_placeholder.svg" alt="" />
+                    <img class="photo" src="@_item.LargeImageUrl" alt="@_item.Name" onerror="this.style.display='none'" />
+                </div>
+            </div>
+
+            <div class="stack" style="gap: 8px">
+                <p class="caption">@(type is null ? "" : CatalogRoutes.Singular(type))</p>
+                <h1 style="font-size: 26px">@_item.Name</h1>
+                <a class="chip press" style="align-self: flex-start; font-size: 13px" href="@_item.BrickLinkUrl" target="_blank" rel="noopener"
+                   title="Open on BrickLink">@_item.Number ↗</a>
+            </div>
+
+            @* My collection *@
+            <div class="clay-card stack">
+                <h2>My collection</h2>
+
+                @if (!Auth.IsSignedIn)
+                {
+                    <p class="muted">Sign in to keep track of what you own.</p>
+                    <a class="btn btn-primary" href="collection">Sign in</a>
+                }
+                else if (quantity == 0)
+                {
+                    <button class="btn btn-primary" @onclick="() => SetQuantityAsync(1)">Add to my collection</button>
+                }
+                else
+                {
+                    <div class="row">
+                        <span class="muted">How many you own</span>
+                        <div class="spacer"></div>
+                        <div class="stepper">
+                            <button class="btn btn-primary" aria-label="One fewer" @onclick="() => SetQuantityAsync(quantity - 1)">−</button>
+                            <span class="count" aria-live="polite">@quantity</span>
+                            <button class="btn btn-primary" aria-label="One more" @onclick="() => SetQuantityAsync(quantity + 1)">+</button>
+                        </div>
+                    </div>
+                    <button class="link-btn danger" style="align-self: center" @onclick="() => SetQuantityAsync(0)">Remove from my collection</button>
+                }
+
+                @if (_message is not null)
+                {
+                    <p class="error">@_message</p>
+                }
+            </div>
+
+            @* Details from BrickLink *@
+            <div class="clay-card stack">
+                <h2>Details</h2>
+                <dl class="details">
+                    @Detail("Category", _item.CategoryName)
+                    @Detail("Released", _item.YearReleased?.ToString())
+                    @Detail("Weight", _item.WeightGrams is { } grams ? $"{grams:0.##} g" : null)
+                    @Detail("Dimensions", _item.Dimensions is { } size ? size + " cm" : null)
+                    @Detail("Also known as", _item.AlternateNumbers)
+                </dl>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Type { get; set; }
+    [SupplyParameterFromQuery] public string? Number { get; set; }
+
+    private CatalogItem? _item;
+    private bool _loading = true;
+    private string? _error;
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        Collection.Changed += OnChanged;
+        Auth.Changed += OnChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _message = null;
+        try
+        {
+            await Collection.EnsureLoadedAsync();
+            _item = Type is null || Number is null ? null : await Catalog.GetAsync(Type, Number);
+        }
+        catch (AppException ex)
+        {
+            _error = ex.Message;
+        }
+        _loading = false;
+    }
+
+    private async Task SetQuantityAsync(int quantity)
+    {
+        _message = null;
+        try
+        {
+            await Collection.SetQuantityAsync(_item!.Type, _item.Number, Math.Max(0, quantity));
+        }
+        catch (AppException ex)
+        {
+            _message = ex.Message;
+        }
+    }
+
+    private static RenderFragment Detail(string label, string? value) => builder =>
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return;
+
+        builder.OpenElement(0, "dt");
+        builder.AddContent(1, label);
+        builder.CloseElement();
+        builder.OpenElement(2, "dd");
+        builder.AddContent(3, value);
+        builder.CloseElement();
+    };
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Collection.Changed -= OnChanged;
+        Auth.Changed -= OnChanged;
+    }
+}

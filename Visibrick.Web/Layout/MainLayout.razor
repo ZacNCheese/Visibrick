@@ -1,0 +1,49 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@inject AuthService Auth
+@inject ToastService Toast
+
+@* Desktop: logo, page links and the account menu across the top *@
+<header class="topbar">
+    <a class="brand" href="collection">
+        <img src="images/brand_mark.svg" alt="" />
+        <span>Visibrick</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Main">
+        <NavLink class="nav-link" href="collection" Match="NavLinkMatch.Prefix">@Icons.Collection My Collection</NavLink>
+        <NavLink class="nav-link" href="catalog" Match="NavLinkMatch.Prefix">@Icons.Catalog Catalog</NavLink>
+    </nav>
+
+    <div class="spacer"></div>
+    <AccountMenu />
+</header>
+
+<main>
+    @Body
+</main>
+
+@* Phones: the same links as a tab bar along the bottom *@
+<nav class="tabbar" aria-label="Main">
+    <NavLink class="nav-link" href="collection" Match="NavLinkMatch.Prefix">@Icons.Collection My Collection</NavLink>
+    <NavLink class="nav-link" href="catalog" Match="NavLinkMatch.Prefix">@Icons.Catalog Catalog</NavLink>
+</nav>
+
+@if (Toast.Message is not null)
+{
+    <div class="toast clay-card" role="status">@Toast.Message</div>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Toast.Changed += OnToastChanged;
+
+        // Restore the signed-in user before the pages need it
+        await Auth.InitializeAsync();
+    }
+
+    private void OnToastChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Toast.Changed -= OnToastChanged;
+}

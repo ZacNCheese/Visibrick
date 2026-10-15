@@ -68,7 +68,8 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
-		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+		<!-- The SQLite engine for sqlite-net (2.1.13+ includes the fix for GHSA-2m69-gcr7-jv3q); started in MauiProgram -->
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
 	</ItemGroup>
 
 	<ItemGroup>
