@@ -51,9 +51,18 @@
 
                             <VerticalStackLayout Spacing="10">
                                 <Border Style="{StaticResource ClayWell}" HeightRequest="140">
-                                    <Image Source="{Binding ImageUrl}"
-                                           Aspect="AspectFit"
-                                           SemanticProperties.Description="{Binding Name}" />
+                                    <Grid>
+                                        <!-- Shows while the photo loads, and stays if there is no photo (about 10% of minifigs) -->
+                                        <Image Source="minifig_placeholder.png"
+                                               WidthRequest="56"
+                                               HeightRequest="56"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+
+                                        <Image Source="{Binding ThumbnailUrl}"
+                                               Aspect="AspectFit"
+                                               SemanticProperties.Description="{Binding Name}" />
+                                    </Grid>
                                 </Border>
 
                                 <Label Text="{Binding Name}"

@@ -27,6 +27,14 @@ public class LegoMinifig
     [JsonPropertyName("set_img_url")]
     public string? ImageUrl { get; set; }
 
+    // Rebrickable's CDN serves small thumbnails of every image, e.g.
+    // .../media/sets/fig-000001.jpg (~2 MB) -> .../media/thumbs/sets/fig-000001.jpg/250x250p.jpg (~50 KB)
+    [Ignore]
+    [JsonIgnore]
+    public string? ThumbnailUrl => ImageUrl?.Contains("/media/") == true
+        ? ImageUrl.Replace("/media/", "/media/thumbs/") + "/250x250p.jpg"
+        : ImageUrl;
+
     [JsonPropertyName("set_url")]
     public string? Url { get; set; }
 
