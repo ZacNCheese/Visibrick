@@ -28,7 +28,7 @@ public static class MauiProgram
 
 		// 🟢 REGISTER SERVICES
 		builder.Services.AddSingleton(new AppDatabase(dbPath));
-		builder.Services.AddSingleton<LegoMinifigRepository>();
+		builder.Services.AddSingleton<CatalogRepository>();
 		builder.Services.AddSingleton<SupabaseCatalogClient>();
 		builder.Services.AddSingleton<CatalogSyncService>();
 		builder.Services.AddSingleton<SyncOrchestrator>();
@@ -36,7 +36,7 @@ public static class MauiProgram
 		// Tab pages live for the whole session; category pages are created each time you open one
 		builder.Services.AddSingleton<CollectionPage>();
 		builder.Services.AddSingleton<CatalogPage>();
-		builder.Services.AddTransient<MinifigsPage>();
+		builder.Services.AddTransient<CatalogItemsPage>();
 		return builder.Build();
 	}
 }

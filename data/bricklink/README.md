@@ -1,14 +1,24 @@
 # BrickLink catalog files
 
-Visibrick's minifig catalog comes from BrickLink's catalog downloads. The `.txt` files in
-this folder are not committed to git; download fresh copies whenever you want to update the catalog.
+Visibrick's catalog (minifigs, sets, parts, gear and books) comes from BrickLink's catalog downloads.
+The `.txt` files in this folder are not committed to git; download fresh copies whenever you want to
+update the catalog. You only need to refresh the ones that changed.
 
 ## Updating the catalog
 
 1. Sign in at https://www.bricklink.com/catalogDownload.asp
-2. Download **Minifigures**, choosing **Tab-Delimited File**, and save it as `Minifigures.txt`
-3. Put it in this folder (`data/bricklink/`). The file name tells the importer what's in it:
-   it must contain "minifig".
+2. For each item type you want to update, download it as **Tab-Delimited File** and keep BrickLink's name:
+
+   | Item type on BrickLink | File |
+   |---|---|
+   | Minifigures | `Minifigures.txt` |
+   | Sets | `Sets.txt` |
+   | Parts | `Parts.txt` |
+   | Gear | `Gear.txt` |
+   | Books | `Books.txt` |
+
+3. Put the files in this folder (`data/bricklink/`), replacing the old ones. The file name tells the importer
+   what's in it: it must contain "minifig", "set", "part", "gear" or "book".
 4. From the repository root:
 
    ```powershell

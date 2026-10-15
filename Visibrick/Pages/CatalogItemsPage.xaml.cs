@@ -6,20 +6,24 @@ using Visibrick.Services.Sync;
 
 namespace Visibrick.Pages;
 
-public partial class MinifigsPage : ContentPage
+// Lists one type of catalog item. Opened from the Catalog tab with GoToAsync("items?type=S"), etc.
+public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 {
-	// Minifigs are loaded from SQLite in batches of this many rows as you scroll.
+	// Items are loaded from SQLite in batches of this many rows as you scroll.
 	// Batches are always whole rows, so rows already on screen never have to change.
 	private const int RowsPerBatch = 10;
 
 	// Roughly how wide each card should be, used to pick the number of columns
 	private const double CardWidth = 190;
 
-	private readonly LegoMinifigRepository _repo;
+	private readonly CatalogRepository _repo;
 	private readonly SyncOrchestrator _sync;
 
-	// Every minifig loaded so far, and the same minifigs grouped into rows of cards for the list
-	private readonly List<LegoMinifig> _minifigs = new();
+	// Which catalog this page shows; set from the "type" navigation parameter
+	private CatalogType _type = CatalogType.Minifigs;
+
+	// Every item loaded so far, and the same items grouped into rows of cards for the list
+	private readonly List<CatalogItem> _items = new();
 	private ObservableCollection<CardRow> _rows = new();
 
 	private CancellationTokenSource? _searchCts;
@@ -40,12 +44,21 @@ public partial class MinifigsPage : ContentPage
 	// Bumped on every reload so a batch that finishes loading after a new search is thrown away
 	private int _generation;
 
-	public MinifigsPage(LegoMinifigRepository repo, SyncOrchestrator sync)
+	public CatalogItemsPage(CatalogRepository repo, SyncOrchestrator sync)
 	{
 		InitializeComponent();
 		_repo = repo;
 		_sync = sync;
-		MinifigList.ItemsSource = _rows;
+		ItemList.ItemsSource = _rows;
+	}
+
+	// Shell passes the navigation parameters here before the page appears
+	public void ApplyQueryAttributes(IDictionary<string, object> query)
+	{
+		if (query.TryGetValue("type", out var code) && CatalogType.FromCode(code as string) is { } type)
+			_type = type;
+
+		TitleLabel.Text = _type.Name;
 	}
 
 	protected override async void OnAppearing()
@@ -75,19 +88,19 @@ public partial class MinifigsPage : ContentPage
 
 	private async void OnBackClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("..");
 
-	// The number chip on a card: open that minifig on BrickLink in the user's browser
+	// The number chip on a card: open that item on BrickLink in the user's browser
 	private async void OnNumberTapped(object? sender, TappedEventArgs e)
 	{
-		if ((sender as BindableObject)?.BindingContext is not LegoMinifig { BrickLinkUrl: { } url })
+		if ((sender as BindableObject)?.BindingContext is not CatalogItem item)
 			return;
 
 		try
 		{
-			await Browser.Default.OpenAsync(url, BrowserLaunchMode.External);
+			await Browser.Default.OpenAsync(item.BrickLinkUrl, BrowserLaunchMode.External);
 		}
 		catch (Exception ex)
 		{
-			System.Diagnostics.Debug.WriteLine("Couldn't open " + url + ": " + ex.Message);
+			System.Diagnostics.Debug.WriteLine("Couldn't open " + item.BrickLinkUrl + ": " + ex.Message);
 		}
 	}
 
@@ -137,16 +150,16 @@ public partial class MinifigsPage : ContentPage
 
 	private void RegroupRows()
 	{
-		// Keep every row full while there's more to load: drop the leftover minifigs from the end,
+		// Keep every row full while there's more to load: drop the leftover items from the end,
 		// and the next batch loads them again as part of a full row
 		if (_hasMore)
 		{
-			var leftover = _minifigs.Count % _columns;
-			_minifigs.RemoveRange(_minifigs.Count - leftover, leftover);
+			var leftover = _items.Count % _columns;
+			_items.RemoveRange(_items.Count - leftover, leftover);
 		}
 
-		_rows = new ObservableCollection<CardRow>(CardRow.Chunk(_minifigs, _columns));
-		MinifigList.ItemsSource = _rows;
+		_rows = new ObservableCollection<CardRow>(CardRow.Chunk(_items, _columns));
+		ItemList.ItemsSource = _rows;
 
 		// More columns means fewer rows. If that leaves too few to scroll, the "load more when you
 		// scroll near the end" trigger never fires, so top up straight away.
@@ -184,10 +197,10 @@ public partial class MinifigsPage : ContentPage
 		_generation++;
 		_isLoading = false;
 		_hasMore = true;
-		_minifigs.Clear();
+		_items.Clear();
 		_rows.Clear();
 
-		_totalCount = await _repo.CountAsync(_search);
+		_totalCount = await _repo.CountAsync(_type.Code, _search);
 		UpdateHeader();
 
 		await LoadMoreAsync();
@@ -205,13 +218,13 @@ public partial class MinifigsPage : ContentPage
 
 		var columns = _columns;
 		var batchSize = columns * RowsPerBatch;
-		var batch = await _repo.SearchAsync(_search, _minifigs.Count, batchSize);
+		var batch = await _repo.SearchAsync(_type.Code, _search, _items.Count, batchSize);
 
 		// A newer search started while this batch was loading
 		if (generation != _generation)
 			return;
 
-		_minifigs.AddRange(batch);
+		_items.AddRange(batch);
 		foreach (var row in CardRow.Chunk(batch, columns))
 			_rows.Add(row);
 
@@ -226,21 +239,22 @@ public partial class MinifigsPage : ContentPage
 			return;
 
 		var searching = !string.IsNullOrWhiteSpace(_search);
+		var noun = _type.CountNoun;
 
 		CountLabel.Text = searching
-			? $"{_totalCount:N0} matching minifigs"
-			: $"{_totalCount:N0} minifigs";
+			? $"{_totalCount:N0} matching {noun}"
+			: $"{_totalCount:N0} {noun}";
 
 		EmptyState.IsVisible = _totalCount == 0;
-		MinifigList.IsVisible = _totalCount > 0;
+		ItemList.IsVisible = _totalCount > 0;
 
 		if (_totalCount == 0)
 		{
 			(EmptyTitle.Text, EmptyMessage.Text) = (searching, _sync.IsSyncing) switch
 			{
 				(true, _) => ("No matches", $"Nothing matches \"{_search!.Trim()}\". Try a different name or number."),
-				(false, true) => ("Downloading the catalog…", "Every minifig from BrickLink will appear here in a moment."),
-				_ => ("No minifigs yet", "Couldn't download the catalog. Check your internet connection; it will try again automatically.")
+				(false, true) => ("Downloading the catalog…", $"Every one of BrickLink's {noun} will appear here in a moment."),
+				_ => ($"No {noun} yet", "They'll appear once the catalog has been imported and downloaded. If you're offline, it will try again automatically.")
 			};
 		}
 	}

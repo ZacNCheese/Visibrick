@@ -1,3 +1,4 @@
+using Visibrick.Core.Models;
 using Visibrick.Data;
 using Visibrick.Services.Sync;
 
@@ -6,13 +7,25 @@ namespace Visibrick.Pages;
 public partial class CatalogPage : ContentPage
 {
 	private readonly SyncOrchestrator _sync;
-	private readonly LegoMinifigRepository _minifigRepo;
+	private readonly CatalogRepository _repo;
 
-	public CatalogPage(SyncOrchestrator sync, LegoMinifigRepository minifigRepo)
+	// The category cards, in the order they appear
+	private readonly List<CatalogCategory> _categories =
+	[
+		new(CatalogType.Minifigs, "icon_minifigs.png"),
+		new(CatalogType.Sets, "icon_sets.png"),
+		new(CatalogType.Parts, "icon_parts.png"),
+		new(CatalogType.Gear, "icon_gear.png"),
+		new(CatalogType.Books, "icon_books.png")
+	];
+
+	public CatalogPage(SyncOrchestrator sync, CatalogRepository repo)
 	{
 		InitializeComponent();
 		_sync = sync;
-		_minifigRepo = minifigRepo;
+		_repo = repo;
+
+		BindableLayout.SetItemsSource(CategoryList, _categories);
 
 		// This page lives for the whole session, so it can stay subscribed
 		_sync.StateChanged += (_, _) => UpdateStatus();
@@ -26,8 +39,11 @@ public partial class CatalogPage : ContentPage
 		await RefreshCountsAsync();
 	}
 
-	private async void OnMinifigsTapped(object? sender, TappedEventArgs e)
-		=> await Shell.Current.GoToAsync("minifigs");
+	private async void OnCategoryTapped(object? sender, TappedEventArgs e)
+	{
+		if ((sender as BindableObject)?.BindingContext is CatalogCategory category)
+			await Shell.Current.GoToAsync($"items?type={category.Type.Code}");
+	}
 
 	private void UpdateStatus()
 	{
@@ -44,5 +60,8 @@ public partial class CatalogPage : ContentPage
 	}
 
 	private async Task RefreshCountsAsync()
-		=> MinifigCountLabel.Text = $"{await _minifigRepo.CountAsync():N0} minifigs";
+	{
+		foreach (var category in _categories)
+			category.CountText = $"{await _repo.CountAsync(category.Type.Code):N0} {category.Type.CountNoun}";
+	}
 }

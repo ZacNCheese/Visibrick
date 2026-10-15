@@ -12,15 +12,15 @@ public class SyncOrchestrator
     private const string LastCheckedKey = "catalog:last-checked";
 
     private readonly CatalogSyncService _catalogSync;
-    private readonly LegoMinifigRepository _minifigRepo;
+    private readonly CatalogRepository _repo;
 
     // Only one sync at a time, even if launch and resume fire close together
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    public SyncOrchestrator(CatalogSyncService catalogSync, LegoMinifigRepository minifigRepo)
+    public SyncOrchestrator(CatalogSyncService catalogSync, CatalogRepository repo)
     {
         _catalogSync = catalogSync;
-        _minifigRepo = minifigRepo;
+        _repo = repo;
     }
 
     // False until the Supabase key is filled in (see SupabaseConfig.cs); nothing is downloaded until then
@@ -55,7 +55,7 @@ public class SyncOrchestrator
         if (!IsConfigured)
             return;
 
-        var isEmpty = await _minifigRepo.CountAsync() == 0;
+        var isEmpty = await _repo.CountAllAsync() == 0;
         var checkedRecently = LastChecked is { } last && DateTime.UtcNow - last < CheckInterval;
 
         if (checkedRecently && !isEmpty && !LastSyncFailed)

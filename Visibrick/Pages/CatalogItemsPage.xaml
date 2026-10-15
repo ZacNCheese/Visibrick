@@ -3,13 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:Visibrick.Core.Models;assembly=Visibrick.Core"
              xmlns:controls="clr-namespace:Visibrick.Controls"
-             x:Class="Visibrick.Pages.MinifigsPage"
+             x:Class="Visibrick.Pages.CatalogItemsPage"
              Shell.NavBarIsVisible="False">
 
+    <!-- One page for every catalog type (minifigs, sets, parts, gear, books); opened with ?type=S etc. -->
+
     <ContentPage.Resources>
-        <!-- One minifig card. No Borders inside list cards: on Windows they can crash a re-laying-out
+        <!-- One item card. No Borders inside list cards: on Windows they can crash a re-laying-out
              list with "Layout cycle detected", so the card is drawn and rounded shapes are BoxViews. -->
-        <DataTemplate x:Key="MinifigCard" x:DataType="models:LegoMinifig">
+        <DataTemplate x:Key="ItemCard" x:DataType="models:CatalogItem">
             <Grid HeightRequest="274">
                 <controls:ClayCardBackground />
 
@@ -20,8 +22,8 @@
                         <BoxView CornerRadius="22"
                                  Color="{AppThemeBinding Light={StaticResource ClayWell}, Dark={StaticResource ClayWellDark}}" />
 
-                        <!-- Shows while the photo loads, and stays if there is no photo (about 10% of minifigs) -->
-                        <Image Source="minifig_placeholder.png"
+                        <!-- Shows while the image loads, and stays if BrickLink has no image -->
+                        <Image Source="item_placeholder.png"
                                WidthRequest="56"
                                HeightRequest="56"
                                HorizontalOptions="Center"
@@ -40,12 +42,12 @@
                            HeightRequest="40" />
 
                     <Grid ColumnDefinitions="*,Auto">
-                        <!-- Number chip: opens the minifig on BrickLink -->
+                        <!-- Number chip: opens the item on BrickLink -->
                         <Grid HorizontalOptions="Start"
                               controls:PressFeedback.IsEnabled="True"
                               ToolTipProperties.Text="Open on BrickLink"
                               SemanticProperties.Description="{Binding Number, StringFormat='{0} on BrickLink'}"
-                              SemanticProperties.Hint="Opens this minifig's page on BrickLink in your browser">
+                              SemanticProperties.Hint="Opens this item's page on BrickLink in your browser">
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnNumberTapped" />
                             </Grid.GestureRecognizers>
@@ -56,6 +58,7 @@
                                    Margin="10,4" />
                         </Grid>
 
+                        <!-- Release year (empty for parts, which don't have one) -->
                         <Label Grid.Column="1"
                                Text="{Binding YearReleased}"
                                Style="{StaticResource ClayCaption}"
@@ -74,7 +77,7 @@
                     Style="{StaticResource ClayLinkButton}"
                     SemanticProperties.Hint="Goes back to the catalog"
                     Clicked="OnBackClicked" />
-            <Label Text="Minifigs"
+            <Label x:Name="TitleLabel"
                    Style="{StaticResource ClayTitle}"
                    SemanticProperties.HeadingLevel="Level1" />
             <Label x:Name="CountLabel" Style="{StaticResource ClaySubtitle}" />
@@ -96,9 +99,9 @@
                    TextChanged="OnSearchTextChanged" />
         </Border>
 
-        <!-- Minifig grid: a vertical list of rows of cards (see CardRow for why it isn't a GridItemsLayout).
-             More minifigs load when you're within 4 rows of the end. -->
-        <CollectionView x:Name="MinifigList"
+        <!-- Item grid: a vertical list of rows of cards (see CardRow for why it isn't a GridItemsLayout).
+             More items load when you're within 4 rows of the end. -->
+        <CollectionView x:Name="ItemList"
                         Grid.Row="2"
                         ItemsUpdatingScrollMode="KeepScrollOffset"
                         RemainingItemsThreshold="4"
@@ -107,7 +110,7 @@
                 <DataTemplate x:DataType="controls:CardRow">
                     <controls:UniformRow Columns="{Binding Columns}"
                                          BindableLayout.ItemsSource="{Binding Items}"
-                                         BindableLayout.ItemTemplate="{StaticResource MinifigCard}" />
+                                         BindableLayout.ItemTemplate="{StaticResource ItemCard}" />
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

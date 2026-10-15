@@ -8,7 +8,7 @@ public partial class AppShell : Shell
 	{
 		InitializeComponent();
 
-		// Catalog categories, opened from the Catalog tab with GoToAsync("minifigs")
-		Routing.RegisterRoute("minifigs", typeof(MinifigsPage));
+		// A catalog category, opened from the Catalog tab with GoToAsync("items?type=S") etc.
+		Routing.RegisterRoute("items", typeof(CatalogItemsPage));
 	}
 }

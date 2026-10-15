@@ -13,7 +13,7 @@
             ContentTemplate="{DataTemplate pages:CollectionPage}"
             Route="collection" />
 
-        <!-- Minifigs opens from here; its route is registered in AppShell.xaml.cs -->
+        <!-- The category pages open from here; their route is registered in AppShell.xaml.cs -->
         <ShellContent
             Title="Catalog"
             Icon="tab_catalog.png"

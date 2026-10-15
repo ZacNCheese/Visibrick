@@ -1,5 +1,5 @@
 ﻿using Npgsql;
-using Visibrick.Core.BrickLink;
+using Visibrick.Core.Models;
 using Visibrick.Sync;
 
 // Imports BrickLink catalog downloads (tab-delimited .txt files) into Postgres (Supabase).
@@ -22,13 +22,13 @@ if (!Directory.Exists(folder))
 }
 
 // Which supported downloads are in the folder; anything else is listed and ignored
-var files = new List<(string Path, CatalogKind Kind)>();
+var files = new List<(string Path, CatalogType Type)>();
 foreach (var path in Directory.GetFiles(folder, "*.txt").OrderBy(p => p))
 {
-    if (BrickLinkCatalogFile.KindFromFileName(path) is { } kind)
-        files.Add((path, kind));
+    if (CatalogType.FromFileName(path) is { } type)
+        files.Add((path, type));
     else
-        CatalogImporter.Log($"{Path.GetFileName(path)}: not a supported download (expected Minifigures), ignored");
+        CatalogImporter.Log($"{Path.GetFileName(path)}: not a supported download (expected Minifigures, Sets, Parts, Gear or Books), ignored");
 }
 
 if (files.Count == 0)
@@ -56,11 +56,11 @@ catch (Exception ex)
 
 // Each file is its own transaction, so one failing doesn't undo the others
 var failed = false;
-foreach (var (path, kind) in files)
+foreach (var (path, type) in files)
 {
     try
     {
-        await importer.ImportAsync(path, kind);
+        await importer.ImportAsync(path, type);
     }
     catch (Exception ex)
     {

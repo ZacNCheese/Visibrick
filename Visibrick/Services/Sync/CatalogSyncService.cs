@@ -5,49 +5,50 @@ using Visibrick.Data;
 namespace Visibrick.Services.Sync;
 
 // Copies the catalog from Supabase into the app's local SQLite database, so the app works offline.
-// Each table is only downloaded when Visibrick.Sync has imported a new BrickLink file since last time.
+// Each item type is only downloaded when Visibrick.Sync has imported a new BrickLink file for it since last time.
 public class CatalogSyncService
 {
     private readonly SupabaseCatalogClient _client;
-    private readonly LegoMinifigRepository _minifigRepo;
+    private readonly CatalogRepository _repo;
 
-    public CatalogSyncService(SupabaseCatalogClient client, LegoMinifigRepository minifigRepo)
+    public CatalogSyncService(SupabaseCatalogClient client, CatalogRepository repo)
     {
         _client = client;
-        _minifigRepo = minifigRepo;
+        _repo = repo;
     }
 
     // Returns true if anything changed
     public async Task<bool> SyncAsync()
     {
         var imports = await _client.GetImportStateAsync();
+        var changed = false;
 
-        return await SyncTableAsync("minifigs", imports, () => _minifigRepo.CountAsync(), async count =>
-            await _minifigRepo.ReplaceAllAsync(await _client.GetAllAsync<LegoMinifig>("minifigs", "number", count)));
+        foreach (var type in CatalogType.All)
+            changed |= await SyncTypeAsync(type, imports);
+
+        return changed;
     }
 
-    private static async Task<bool> SyncTableAsync(
-        string kind,
-        Dictionary<string, SupabaseCatalogClient.ImportState> imports,
-        Func<Task<int>> localCount,
-        Func<int, Task> downloadAndReplace)
+    private async Task<bool> SyncTypeAsync(CatalogType type, Dictionary<string, SupabaseCatalogClient.ImportState> imports)
     {
-        // Nothing imported on the server yet (no BrickLink file for this catalog)
-        if (!imports.TryGetValue(kind, out var import))
+        // Nothing imported on the server yet for this type
+        if (!imports.TryGetValue(type.Code, out var import))
             return false;
 
         // Same file as last time, and the local copy is still there
-        var hashKey = "catalog-hash:" + kind;
-        if (Preferences.Get(hashKey, null) == import.FileHash && await localCount() > 0)
+        var hashKey = "catalog-hash:" + type.Code;
+        if (Preferences.Get(hashKey, null) == import.FileHash && await _repo.CountAsync(type.Code) > 0)
         {
-            Debug.WriteLine($"{kind.ToUpperInvariant()} UNCHANGED");
+            Debug.WriteLine($"{type.Name.ToUpperInvariant()} UNCHANGED");
             return false;
         }
 
-        await downloadAndReplace(import.RowCount);
-        Debug.WriteLine($"{kind.ToUpperInvariant()} DOWNLOADED: {import.RowCount}");
+        var timer = Stopwatch.StartNew();
+        var items = await _client.GetItemsAsync(type.Code, import.RowCount);
+        await _repo.ReplaceTypeAsync(type.Code, items);
+        Debug.WriteLine($"{type.Name.ToUpperInvariant()} DOWNLOADED: {items.Count} in {timer.Elapsed.TotalSeconds:F1}s");
 
-        // Remember the file only after its rows are safely saved, so a failed download is retried next time
+        // Remember the file only after its items are safely saved, so a failed download is retried next time
         Preferences.Set(hashKey, import.FileHash);
         return true;
     }
