@@ -5,3 +5,6 @@ obj/
 .DS_Store
 *.user
 *.suo
+
+# BrickLink catalog downloads (re-downloaded from bricklink.com; imported by Visibrick.Sync)
+data/bricklink/*.txt

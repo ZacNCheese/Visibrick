@@ -3,21 +3,22 @@
     x:Class="Visibrick.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:Visibrick"
+    xmlns:pages="clr-namespace:Visibrick.Pages"
     Title="Visibrick">
 
     <TabBar>
         <ShellContent
-            Title="Home"
-            Icon="tab_home.png"
-            ContentTemplate="{DataTemplate local:MainPage}"
-            Route="MainPage" />
+            Title="My Collection"
+            Icon="tab_collection.png"
+            ContentTemplate="{DataTemplate pages:CollectionPage}"
+            Route="collection" />
 
+        <!-- Minifigs opens from here; its route is registered in AppShell.xaml.cs -->
         <ShellContent
-            Title="Minifigs"
-            Icon="tab_minifigs.png"
-            ContentTemplate="{DataTemplate local:MinifigsPage}"
-            Route="MinifigsPage" />
+            Title="Catalog"
+            Icon="tab_catalog.png"
+            ContentTemplate="{DataTemplate pages:CatalogPage}"
+            Route="catalog" />
     </TabBar>
 
 </Shell>

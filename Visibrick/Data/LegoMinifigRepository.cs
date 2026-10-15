@@ -13,21 +13,18 @@ public class LegoMinifigRepository
         _db = database.Connection;
     }
 
-    public async Task<DateTime?> GetLatestModifiedAsync()
-    {
-        var latest = await _db.Table<LegoMinifig>()
-            .OrderByDescending(x => x.LastModified)
-            .FirstOrDefaultAsync();
-
-        return latest?.LastModified;
-    }
-
     public Task<List<LegoMinifig>> GetAllAsync()
         => _db.Table<LegoMinifig>().ToListAsync();
 
-    // One page of minifigs whose name or number contains the search text (case-insensitive)
+    // One page of minifigs whose name or number contains the search text (case-insensitive).
+    // Newest first; minifigs with an unknown year come last.
     public Task<List<LegoMinifig>> SearchAsync(string? search, int skip, int take)
-        => Filter(search).OrderBy(x => x.Number).Skip(skip).Take(take).ToListAsync();
+        => Filter(search)
+            .OrderByDescending(x => x.YearReleased)
+            .ThenBy(x => x.Number)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
 
     public Task<int> CountAsync(string? search = null)
         => Filter(search).CountAsync();

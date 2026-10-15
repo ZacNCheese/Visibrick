@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Visibrick.Data;
-using Visibrick.Services.API;
+using Visibrick.Pages;
 using Visibrick.Services.Sync;
 
 namespace Visibrick;
@@ -23,19 +23,20 @@ public static class MauiProgram
 		builder.Logging.AddDebug();
 #endif
 		// 🟢 DATABASE PATH
-		var dbPath = Path.Combine(FileSystem.AppDataDirectory, "lego.db");
+		var dbPath = Path.Combine(FileSystem.AppDataDirectory, "visibrick.db");
 		Debug.WriteLine(dbPath);
 
 		// 🟢 REGISTER SERVICES
 		builder.Services.AddSingleton(new AppDatabase(dbPath));
-		builder.Services.AddSingleton<LegoColorRepository>();
 		builder.Services.AddSingleton<LegoMinifigRepository>();
-		builder.Services.AddSingleton<RestService>();
-		builder.Services.AddSingleton<LegoColorSyncService>();
-		builder.Services.AddSingleton<LegoMinifigSyncService>();
+		builder.Services.AddSingleton<SupabaseCatalogClient>();
+		builder.Services.AddSingleton<CatalogSyncService>();
 		builder.Services.AddSingleton<SyncOrchestrator>();
-		builder.Services.AddSingleton<MainPage>();
-		builder.Services.AddSingleton<MinifigsPage>();
+
+		// Tab pages live for the whole session; category pages are created each time you open one
+		builder.Services.AddSingleton<CollectionPage>();
+		builder.Services.AddSingleton<CatalogPage>();
+		builder.Services.AddTransient<MinifigsPage>();
 		return builder.Build();
 	}
 }

@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:Visibrick.Core.Models;assembly=Visibrick.Core"
              xmlns:controls="clr-namespace:Visibrick.Controls"
-             x:Class="Visibrick.MinifigsPage"
+             x:Class="Visibrick.Pages.MinifigsPage"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -27,7 +27,7 @@
                                HorizontalOptions="Center"
                                VerticalOptions="Center" />
 
-                        <Image Source="{Binding ThumbnailUrl}"
+                        <Image Source="{Binding ImageUrl}"
                                Aspect="AspectFit"
                                Margin="8"
                                SemanticProperties.Description="{Binding Name}" />
@@ -40,17 +40,24 @@
                            HeightRequest="40" />
 
                     <Grid ColumnDefinitions="*,Auto">
-                        <!-- Chip -->
-                        <Grid HorizontalOptions="Start">
+                        <!-- Number chip: opens the minifig on BrickLink -->
+                        <Grid HorizontalOptions="Start"
+                              controls:PressFeedback.IsEnabled="True"
+                              ToolTipProperties.Text="Open on BrickLink"
+                              SemanticProperties.Description="{Binding Number, StringFormat='{0} on BrickLink'}"
+                              SemanticProperties.Hint="Opens this minifig's page on BrickLink in your browser">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnNumberTapped" />
+                            </Grid.GestureRecognizers>
                             <BoxView CornerRadius="12"
                                      Color="{AppThemeBinding Light={StaticResource ClayChip}, Dark={StaticResource ClayChipDark}}" />
-                            <Label Text="{Binding Number}"
+                            <Label Text="{Binding Number, StringFormat='{0} ↗'}"
                                    Style="{StaticResource ClayChipLabel}"
                                    Margin="10,4" />
                         </Grid>
 
                         <Label Grid.Column="1"
-                               Text="{Binding NumParts, StringFormat='{0} pcs'}"
+                               Text="{Binding YearReleased}"
                                Style="{StaticResource ClayCaption}"
                                VerticalOptions="Center" />
                     </Grid>

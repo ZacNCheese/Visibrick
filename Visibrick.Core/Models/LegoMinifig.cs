@@ -3,41 +3,38 @@ using SQLite;
 
 namespace Visibrick.Core.Models;
 
+// A minifig from BrickLink's catalog. JSON names match the Supabase "minifigs" table.
 public class LegoMinifig
 {
-    /*
-    "set_num": "fig-000001",
-      "name": "Toy Store Employee",
-      "num_parts": 4,
-      "set_img_url": "https://cdn.rebrickable.com/media/sets/fig-000001/55726.jpg",
-      "set_url": "https://rebrickable.com/minifigs/fig-000001/toy-store-employee/",
-      "last_modified_dt": "2020-05-27T21:47:00.694941Z"
-    */
-
+    // BrickLink item number, e.g. "sw0001a"
     [PrimaryKey]
-    [JsonPropertyName("set_num")]
+    [JsonPropertyName("number")]
     public string? Number { get; set; }
 
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
-    [JsonPropertyName("num_parts")]
-    public int NumParts { get; set; }
+    [JsonPropertyName("category_id")]
+    public int? CategoryId { get; set; }
 
-    [JsonPropertyName("set_img_url")]
-    public string? ImageUrl { get; set; }
+    // e.g. "Star Wars / Star Wars Episode 1"
+    [JsonPropertyName("category_name")]
+    public string? CategoryName { get; set; }
 
-    // Rebrickable's CDN serves small thumbnails of every image, e.g.
-    // .../media/sets/fig-000001.jpg (~2 MB) -> .../media/thumbs/sets/fig-000001.jpg/250x250p.jpg (~50 KB)
+    // Null when BrickLink lists the year as unknown ("?")
+    [JsonPropertyName("year_released")]
+    public int? YearReleased { get; set; }
+
+    [JsonPropertyName("weight_grams")]
+    public double? WeightGrams { get; set; }
+
+    // BrickLink serves an image for every catalog item at a predictable address
     [Ignore]
     [JsonIgnore]
-    public string? ThumbnailUrl => ImageUrl?.Contains("/media/") == true
-        ? ImageUrl.Replace("/media/", "/media/thumbs/") + "/250x250p.jpg"
-        : ImageUrl;
+    public string? ImageUrl => Number is null ? null : $"https://img.bricklink.com/ItemImage/MN/0/{Number}.png";
 
-    [JsonPropertyName("set_url")]
-    public string? Url { get; set; }
-
-    [JsonPropertyName("last_modified_dt")]
-    public DateTime LastModified { get; set; }
+    // The minifig's page on BrickLink
+    [Ignore]
+    [JsonIgnore]
+    public string? BrickLinkUrl => Number is null ? null : $"https://www.bricklink.com/v2/catalog/catalogitem.page?M={Uri.EscapeDataString(Number)}";
 }

@@ -1,4 +1,4 @@
-﻿namespace Visibrick;
+namespace Visibrick.Pages;
 
 public partial class CollectionPage : ContentPage
 {

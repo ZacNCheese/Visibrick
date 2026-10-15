@@ -4,7 +4,7 @@ using Visibrick.Core.Models;
 using Visibrick.Data;
 using Visibrick.Services.Sync;
 
-namespace Visibrick;
+namespace Visibrick.Pages;
 
 public partial class MinifigsPage : ContentPage
 {
@@ -74,6 +74,22 @@ public partial class MinifigsPage : ContentPage
 	private void OnSyncStateChanged(object? sender, EventArgs e) => UpdateHeader();
 
 	private async void OnBackClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("..");
+
+	// The number chip on a card: open that minifig on BrickLink in the user's browser
+	private async void OnNumberTapped(object? sender, TappedEventArgs e)
+	{
+		if ((sender as BindableObject)?.BindingContext is not LegoMinifig { BrickLinkUrl: { } url })
+			return;
+
+		try
+		{
+			await Browser.Default.OpenAsync(url, BrowserLaunchMode.External);
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine("Couldn't open " + url + ": " + ex.Message);
+		}
+	}
 
 	protected override void OnSizeAllocated(double width, double height)
 	{
@@ -223,7 +239,7 @@ public partial class MinifigsPage : ContentPage
 			(EmptyTitle.Text, EmptyMessage.Text) = (searching, _sync.IsSyncing) switch
 			{
 				(true, _) => ("No matches", $"Nothing matches \"{_search!.Trim()}\". Try a different name or number."),
-				(false, true) => ("Downloading the catalog…", "Every minifig from Rebrickable will appear here in a moment."),
+				(false, true) => ("Downloading the catalog…", "Every minifig from BrickLink will appear here in a moment."),
 				_ => ("No minifigs yet", "Couldn't download the catalog. Check your internet connection; it will try again automatically.")
 			};
 		}
