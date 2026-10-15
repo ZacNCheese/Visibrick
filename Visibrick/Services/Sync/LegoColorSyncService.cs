@@ -1,36 +1,25 @@
 using System.Diagnostics;
-using VisiBrick;
 using System.Globalization;
 using System.IO.Compression;
-//using Microsoft.Data.Sqlite;
+using Visibrick.Data;
+using Visibrick.Models;
+
+namespace Visibrick.Services.Sync;
 
 public class LegoColorSyncService
 {
-    private readonly RestService _api;
     private readonly LegoColorRepository _repo;
 
-    public LegoColorSyncService(RestService api, LegoColorRepository repo)
+    public LegoColorSyncService(LegoColorRepository repo)
     {
-        _api = api;
         _repo = repo;
     }
-
-    /*public async Task SyncLegoColorsAsync()
-    {
-        var colors = await _api.GetLegoColorsAsync();
-
-        foreach (var color in colors)
-        {
-            Debug.WriteLine("UPSERTING COLOR: " + color.ColorName);
-            await _repo.InsertOrReplaceAsync(color);
-        }
-    }*/
-
-    
 
     public async Task SyncLegoColorsAsync()
     {
         // Download the colors.csv.gz file from Rebrickable, Delete the existing colors in the database, and insert the new colors from the CSV file. After all data is inserted, delete the downloaded files and the temporary directory.
+
+        // This file is updated daily (as of June 2026), so we can use it to keep our local database up to date with the latest colors
 
         var url = "https://cdn.rebrickable.com/media/downloads/colors.csv.gz";
 
@@ -73,16 +62,15 @@ public class LegoColorSyncService
                 colors.Add(new LegoColor
                 {
                     Id = int.Parse(cols[0], CultureInfo.InvariantCulture),
-                    ColorName = cols[1],
-                    ColorRGB = cols[2],
-                    Is_Transluscent = bool.TryParse(cols[3], out bool isTrans) && isTrans
+                    Name = cols[1],
+                    Rgb = cols[2],
+                    IsTranslucent = bool.TryParse(cols[3], out bool isTrans) && isTrans
                 });
             }
 
             Debug.WriteLine("FULL COLORS LIST: " + colors.ToString());
 
             await _repo.ReplaceAllAsync(colors);
-            
         }
         finally
         {

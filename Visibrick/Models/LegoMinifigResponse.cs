@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
-using SQLite;
+
+namespace Visibrick.Models;
 
 public class LegoMinifigResponse
 {
@@ -11,5 +12,6 @@ public class LegoMinifigResponse
 
     [JsonPropertyName("previous")]
     public string? Previous { get; set; }
+
     public List<LegoMinifig>? Results { get; set; }
 }

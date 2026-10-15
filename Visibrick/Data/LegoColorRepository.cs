@@ -1,5 +1,8 @@
 using System.Diagnostics;
 using SQLite;
+using Visibrick.Models;
+
+namespace Visibrick.Data;
 
 public class LegoColorRepository
 {
@@ -12,6 +15,9 @@ public class LegoColorRepository
 
     public Task<List<LegoColor>> GetAllAsync()
         => _db.Table<LegoColor>().ToListAsync();
+
+    public Task<int> CountAsync()
+        => _db.Table<LegoColor>().CountAsync();
 
     public Task InsertAsync(LegoColor color)
         => _db.InsertAsync(color);

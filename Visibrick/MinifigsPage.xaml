@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:Visibrick.Models"
+             x:Class="Visibrick.MinifigsPage"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16,24,16,0">
+
+        <!-- Header -->
+        <VerticalStackLayout Padding="8,0" Spacing="2">
+            <Label Text="Minifigs"
+                   Style="{StaticResource ClayTitle}"
+                   SemanticProperties.HeadingLevel="Level1" />
+            <Label x:Name="CountLabel" Style="{StaticResource ClaySubtitle}" />
+        </VerticalStackLayout>
+
+        <!-- Search -->
+        <Border Grid.Row="1"
+                Style="{StaticResource ClayCard}"
+                Padding="18,4"
+                Margin="8,16,8,8"
+                StrokeShape="RoundRectangle 24">
+            <Border.Shadow>
+                <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+            </Border.Shadow>
+            <Entry x:Name="SearchEntry"
+                   Style="{StaticResource ClayEntry}"
+                   Placeholder="Search by name or number"
+                   ClearButtonVisibility="WhileEditing"
+                   TextChanged="OnSearchTextChanged" />
+        </Border>
+
+        <!-- Minifig grid -->
+        <CollectionView x:Name="MinifigList"
+                        Grid.Row="2"
+                        RemainingItemsThreshold="12"
+                        RemainingItemsThresholdReached="OnRemainingItemsThresholdReached">
+            <CollectionView.ItemsLayout>
+                <GridItemsLayout x:Name="MinifigGrid" Orientation="Vertical" Span="2" />
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:LegoMinifig">
+                    <!-- Outer padding leaves room for the card's shadow -->
+                    <Grid Padding="8,10,8,14">
+                        <Border Style="{StaticResource ClayCard}" Padding="12">
+                            <Border.Shadow>
+                                <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                            </Border.Shadow>
+
+                            <VerticalStackLayout Spacing="10">
+                                <Border Style="{StaticResource ClayWell}" HeightRequest="140">
+                                    <Image Source="{Binding ImageUrl}"
+                                           Aspect="AspectFit"
+                                           SemanticProperties.Description="{Binding Name}" />
+                                </Border>
+
+                                <Label Text="{Binding Name}"
+                                       Style="{StaticResource ClayCardTitle}"
+                                       MaxLines="2"
+                                       LineBreakMode="TailTruncation"
+                                       HeightRequest="40" />
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Border Style="{StaticResource ClayChip}" HorizontalOptions="Start">
+                                        <Label Text="{Binding Number}" Style="{StaticResource ClayChipLabel}" />
+                                    </Border>
+                                    <Label Grid.Column="1"
+                                           Text="{Binding NumParts, StringFormat='{0} pcs'}"
+                                           Style="{StaticResource ClayCaption}"
+                                           VerticalOptions="Center" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Shown when there's nothing to list -->
+        <Border x:Name="EmptyState"
+                Grid.Row="2"
+                Style="{StaticResource ClayCard}"
+                Margin="8,16"
+                Padding="28"
+                VerticalOptions="Start"
+                IsVisible="False">
+            <Border.Shadow>
+                <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="8">
+                <Label x:Name="EmptyTitle" Style="{StaticResource ClayHeading}" HorizontalTextAlignment="Center" />
+                <Label x:Name="EmptyMessage" Style="{StaticResource ClaySubtitle}" HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+
+</ContentPage>

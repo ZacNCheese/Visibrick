@@ -1,4 +1,4 @@
-﻿namespace VisiBrick;
+﻿namespace Visibrick;
 
 public partial class AppShell : Shell
 {

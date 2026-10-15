@@ -6,6 +6,7 @@
     <!-- Note: For Android please see also Platforms\Android\Resources\values\colors.xml -->
 
     <Color x:Key="Primary">#512BD4</Color>
+    <Color x:Key="PrimaryLight">#8B6CF5</Color>
     <Color x:Key="PrimaryDark">#ac99ea</Color>
     <Color x:Key="PrimaryDarkText">#242424</Color>
     <Color x:Key="Secondary">#DFD8F7</Color>
@@ -26,6 +27,25 @@
     <Color x:Key="Gray600">#404040</Color>
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
+
+    <!-- Claymorphism palette (used by Clay.xaml). "Dark" variants are for dark mode. -->
+    <Color x:Key="ClayBackground">#EEE9FB</Color>
+    <Color x:Key="ClayBackgroundDark">#191226</Color>
+    <Color x:Key="ClaySurface">#FBF9FF</Color>
+    <Color x:Key="ClaySurfaceDark">#2E2347</Color>
+    <Color x:Key="ClaySurfaceShade">#E9E0FF</Color>
+    <Color x:Key="ClaySurfaceShadeDark">#241B3A</Color>
+    <Color x:Key="ClayWell">#FFFFFF</Color>
+    <Color x:Key="ClayWellDark">#F1ECFF</Color>
+    <Color x:Key="ClayText">#2B1A4A</Color>
+    <Color x:Key="ClayTextDark">#F2EDFF</Color>
+    <Color x:Key="ClayMuted">#7D6E9C</Color>
+    <Color x:Key="ClayMutedDark">#B5A7D6</Color>
+    <Color x:Key="ClayChip">#E2D7FF</Color>
+    <Color x:Key="ClayChipDark">#3A2C62</Color>
+    <Color x:Key="ClayChipText">#4B23B8</Color>
+    <Color x:Key="ClayChipTextDark">#D9CCFF</Color>
+    <Color x:Key="ClayShadow">#4A2BA8</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>

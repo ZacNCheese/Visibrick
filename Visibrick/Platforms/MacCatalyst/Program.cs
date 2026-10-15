@@ -1,7 +1,7 @@
 ﻿using ObjCRuntime;
 using UIKit;
 
-namespace VisiBrick;
+namespace Visibrick;
 
 public class Program
 {

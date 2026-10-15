@@ -1,6 +1,6 @@
 ﻿using Foundation;
 
-namespace VisiBrick;
+namespace Visibrick;
 
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate

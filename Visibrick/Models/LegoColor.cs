@@ -1,21 +1,15 @@
-using System.Text.Json.Serialization;
 using SQLite;
+
+namespace Visibrick.Models;
 
 public class LegoColor
 {
-    //[PrimaryKey] [AutoIncrement]
-    //public int AutoID {get; set;}
-
     [PrimaryKey]
-    [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    [JsonPropertyName("name")]
-    public string? ColorName { get; set; }
+    public string? Name { get; set; }
 
-    [JsonPropertyName("rgb")]
-    public string? ColorRGB { get; set; }
+    public string? Rgb { get; set; }
 
-    [JsonPropertyName("is_trans")]
-    public bool Is_Transluscent { get; set; }
+    public bool IsTranslucent { get; set; }
 }

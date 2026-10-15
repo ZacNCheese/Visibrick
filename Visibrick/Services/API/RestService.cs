@@ -1,20 +1,20 @@
-namespace VisiBrick;
-using System.Text.Json;
 using System.Diagnostics;
-using System.Net;
+using System.Text.Json;
+using Visibrick.Data;
+using Visibrick.Models;
+
+namespace Visibrick.Services.API;
 
 public class RestService
 {
-    HttpClient _client;
-    JsonSerializerOptions _serializerOptions;
-    public List<LegoColor>? LegoColors { get; set; }
-	public List<LegoMinifig>? LegoMinifigs { get; set; }
-	private readonly LegoMinifigsRepository _repo;
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _serializerOptions;
+    private readonly LegoMinifigRepository _repo;
 
-    public RestService(LegoMinifigsRepository repo)
+    public RestService(LegoMinifigRepository repo)
     {
         _client = new HttpClient();
-		_repo = repo;
+        _repo = repo;
         _serializerOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -22,79 +22,41 @@ public class RestService
         };
     }
 
-    public async Task<List<LegoColor>> GetLegoColorsAsync()
-		{
-			LegoColors = new List<LegoColor>();
+    public async Task<List<LegoMinifig>> GetLegoMinifigsAsync()
+    {
+        var allMinifigs = new List<LegoMinifig>();
 
-			//Uri uri = new Uri(string.Format("https://rebrickable.com/api/v3/lego/colors/?key=2d2ec2792fd89d2b412f795f5705ac5f", string.Empty));
-			string url;
+        // 👇 get latest modified from DB
+        var lastSync = await _repo.GetLatestModifiedAsync();
 
-			url = "https://rebrickable.com/api/v3/lego/colors/?key=2d2ec2792fd89d2b412f795f5705ac5f&page_size=5000";
+        string? url = "https://rebrickable.com/api/v3/lego/minifigs/?key=2d2ec2792fd89d2b412f795f5705ac5f&page_size=5000";
 
-			try
-			{
-				HttpResponseMessage response = await _client.GetAsync(url);
-				if (response.IsSuccessStatusCode)
-				{
-					string content = await response.Content.ReadAsStringAsync();
-					var result = JsonSerializer.Deserialize<LegoColorResponse>(content, _serializerOptions);
-					if (result != null)
-					{
-						LegoColors.AddRange(result.Results);
+        while (!string.IsNullOrEmpty(url))
+        {
+            var response = await _client.GetAsync(url);
 
-						url = result.Next != null
-							? result.Next + "&key=2d2ec2792fd89d2b412f795f5705ac5f"
-							: null;
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				Debug.WriteLine(@"\tERROR {0}", ex.Message);
-			}
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                Debug.WriteLine("RATE LIMITED - waiting...");
+                await Task.Delay(2000);
+                continue;
+            }
 
-			return LegoColors;
-		}
+            response.EnsureSuccessStatusCode();
 
-	public async Task<List<LegoMinifig>> GetLegoMinifigsAsync()
-		{
-			var allMinifigs = new List<LegoMinifig>();
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<LegoMinifigResponse>(json, _serializerOptions);
 
-			// 👇 get latest modified from DB
-			var lastSync = await _repo.GetLatestModifiedAsync();
+            if (result != null)
+            {
+                allMinifigs.AddRange(result.Results);
 
-			string url;
+                url = result.Next != null
+                    ? result.Next + "&key=2d2ec2792fd89d2b412f795f5705ac5f"
+                    : null;
+            }
+        }
 
-			url = "https://rebrickable.com/api/v3/lego/minifigs/?key=2d2ec2792fd89d2b412f795f5705ac5f&page_size=5000";
-			
-
-			while (!string.IsNullOrEmpty(url))
-			{
-				var response = await _client.GetAsync(url);
-
-				if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-				{
-					Debug.WriteLine("RATE LIMITED - waiting...");
-					await Task.Delay(2000);
-					continue;
-				}
-
-				response.EnsureSuccessStatusCode();
-
-				var json = await response.Content.ReadAsStringAsync();
-				var result = JsonSerializer.Deserialize<LegoMinifigResponse>(json, _serializerOptions);
-
-				if (result != null)
-				{
-					allMinifigs.AddRange(result.Results);
-
-					url = result.Next != null
-						? result.Next + "&key=2d2ec2792fd89d2b412f795f5705ac5f"
-						: null;
-				}
-			}
-
-			return allMinifigs;
-		}
-    
+        return allMinifigs;
+    }
 }

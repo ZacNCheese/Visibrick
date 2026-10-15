@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!--
+        Claymorphism styles: soft, puffy surfaces with big rounded corners,
+        a light gradient fill, a bright rim on the top-left edge and a soft purple drop shadow.
+
+        MAUI can't share one Shadow object between many views, so each view
+        sets its own <Border.Shadow>; the values used everywhere are:
+        Brush ClayShadow, Offset 0,12, Radius 28, Opacity 0.22
+    -->
+
+    <!-- Card fill: lighter at the top-left, slightly deeper at the bottom-right -->
+    <LinearGradientBrush x:Key="ClaySurfaceBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="{AppThemeBinding Light={StaticResource ClaySurface}, Dark={StaticResource ClaySurfaceDark}}" />
+        <GradientStop Offset="1" Color="{AppThemeBinding Light={StaticResource ClaySurfaceShade}, Dark={StaticResource ClaySurfaceShadeDark}}" />
+    </LinearGradientBrush>
+
+    <!-- Rim: a bright highlight that fades out, which gives the "puffy" edge -->
+    <LinearGradientBrush x:Key="ClayRimBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="{AppThemeBinding Light=#F2FFFFFF, Dark=#38FFFFFF}" />
+        <GradientStop Offset="0.55" Color="#00FFFFFF" />
+        <GradientStop Offset="1" Color="{AppThemeBinding Light=#224A2BA8, Dark=#40000000}" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="ClayButtonBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="{StaticResource PrimaryLight}" />
+        <GradientStop Offset="1" Color="{StaticResource Primary}" />
+    </LinearGradientBrush>
+
+    <!-- Surfaces -->
+
+    <Style x:Key="ClayCard" TargetType="Border">
+        <Setter Property="StrokeShape" Value="RoundRectangle 28" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="Stroke" Value="{StaticResource ClayRimBrush}" />
+        <Setter Property="Background" Value="{StaticResource ClaySurfaceBrush}" />
+        <Setter Property="Padding" Value="20" />
+    </Style>
+
+    <!-- A recessed, lighter area inside a card (image wells, inputs) -->
+    <Style x:Key="ClayWell" TargetType="Border">
+        <Setter Property="StrokeShape" Value="RoundRectangle 22" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ClayWell}, Dark={StaticResource ClayWellDark}}" />
+        <Setter Property="Padding" Value="8" />
+    </Style>
+
+    <Style x:Key="ClayChip" TargetType="Border">
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ClayChip}, Dark={StaticResource ClayChipDark}}" />
+        <Setter Property="Padding" Value="10,4" />
+    </Style>
+
+    <!-- Controls -->
+
+    <Style x:Key="ClayButton" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource ClayButtonBrush}" />
+        <Setter Property="TextColor" Value="{StaticResource White}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="BorderWidth" Value="0" />
+        <Setter Property="HeightRequest" Value="56" />
+        <Setter Property="Padding" Value="20,0" />
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.02" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="0.97" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="Opacity" Value="0.6" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ClayEntry" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ClayText}, Dark={StaticResource ClayTextDark}}" />
+        <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource ClayMuted}, Dark={StaticResource ClayMutedDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="MinimumHeightRequest" Value="44" />
+    </Style>
+
+    <!-- Text -->
+
+    <Style x:Key="ClayTitle" TargetType="Label">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ClayText}, Dark={StaticResource ClayTextDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="32" />
+    </Style>
+
+    <Style x:Key="ClaySubtitle" TargetType="Label">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ClayMuted}, Dark={StaticResource ClayMutedDark}}" />
+        <Setter Property="FontSize" Value="15" />
+    </Style>
+
+    <Style x:Key="ClayHeading" TargetType="Label">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ClayText}, Dark={StaticResource ClayTextDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="18" />
+    </Style>
+
+    <Style x:Key="ClayCardTitle" TargetType="Label">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ClayText}, Dark={StaticResource ClayTextDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style x:Key="ClayCaption" TargetType="Label">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ClayMuted}, Dark={StaticResource ClayMutedDark}}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <Style x:Key="ClayChipLabel" TargetType="Label">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ClayChipText}, Dark={StaticResource ClayChipTextDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <Style x:Key="ClayStatValue" TargetType="Label">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="28" />
+    </Style>
+
+</ResourceDictionary>

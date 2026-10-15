@@ -1,8 +1,22 @@
 ﻿<maui:MauiWinUIApplication
-    x:Class="VisiBrick.WinUI.App"
+    x:Class="Visibrick.WinUI.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:maui="using:Microsoft.Maui"
-    xmlns:local="using:VisiBrick.WinUI">
+    xmlns:local="using:Visibrick.WinUI">
+
+    <maui:MauiWinUIApplication.Resources>
+        <ResourceDictionary>
+            <!-- Remove the native text box border, focus underline and hover/focus fill
+                 so Entries blend into their clay containers -->
+            <Thickness x:Key="TextControlBorderThemeThickness">0</Thickness>
+            <Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
+            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent" />
+        </ResourceDictionary>
+    </maui:MauiWinUIApplication.Resources>
 
 </maui:MauiWinUIApplication>

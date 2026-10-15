@@ -1,4 +1,7 @@
 using SQLite;
+using Visibrick.Models;
+
+namespace Visibrick.Data;
 
 public class AppDatabase
 {
@@ -8,9 +11,8 @@ public class AppDatabase
     {
         _db = new SQLiteAsyncConnection(dbPath);
 
-        // 👇 THIS creates your table
+        // 👇 THIS creates your tables
         _db.CreateTableAsync<LegoColor>().Wait();
-
         _db.CreateTableAsync<LegoMinifig>().Wait();
     }
 

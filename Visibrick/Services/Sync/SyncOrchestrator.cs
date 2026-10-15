@@ -1,3 +1,5 @@
+namespace Visibrick.Services.Sync;
+
 public class SyncOrchestrator
 {
     private readonly LegoColorSyncService _colorSync;
@@ -14,6 +16,6 @@ public class SyncOrchestrator
     public async Task FullSyncAsync()
     {
         await _colorSync.SyncLegoColorsAsync();
-        //await _minifigSync.SyncLegoMinifigsAsync();
+        await _minifigSync.SyncLegoMinifigsAsync();
     }
 }

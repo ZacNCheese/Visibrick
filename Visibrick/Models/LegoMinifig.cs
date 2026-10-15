@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using SQLite;
 
+namespace Visibrick.Models;
+
 public class LegoMinifig
 {
     /*
@@ -14,22 +16,20 @@ public class LegoMinifig
 
     [PrimaryKey]
     [JsonPropertyName("set_num")]
-    public string? MinifigNumber { get; set; }
+    public string? Number { get; set; }
 
     [JsonPropertyName("name")]
-    public string? MinifigName { get; set; }
+    public string? Name { get; set; }
 
     [JsonPropertyName("num_parts")]
-    public int MinifigNumParts {get; set;}
+    public int NumParts { get; set; }
 
     [JsonPropertyName("set_img_url")]
-    public string? MinifigImageUrl { get; set; }
+    public string? ImageUrl { get; set; }
 
     [JsonPropertyName("set_url")]
-    public string? MinifigUrl { get; set; }
+    public string? Url { get; set; }
 
     [JsonPropertyName("last_modified_dt")]
-    public DateTime LastModified {get; set;}
-
-
+    public DateTime LastModified { get; set; }
 }

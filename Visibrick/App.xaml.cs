@@ -1,13 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace VisiBrick;
+﻿namespace Visibrick;
 
 public partial class App : Application
 {
 	public App()
 	{
 		InitializeComponent();
-		//test comment
 	}
 
 	protected override Window CreateWindow(IActivationState? activationState)
