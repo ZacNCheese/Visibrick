@@ -1,5 +1,5 @@
 using SQLite;
-using Visibrick.Models;
+using Visibrick.Core.Models;
 
 namespace Visibrick.Data;
 

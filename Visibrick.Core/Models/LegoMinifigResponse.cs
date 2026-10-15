@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Visibrick.Models;
+namespace Visibrick.Core.Models;
 
 public class LegoMinifigResponse
 {

@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using Visibrick.Data;
-using Visibrick.Models;
+using Visibrick.Core.Models;
 
 namespace Visibrick;
 

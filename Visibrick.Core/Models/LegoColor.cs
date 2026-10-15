@@ -1,6 +1,6 @@
 using SQLite;
 
-namespace Visibrick.Models;
+namespace Visibrick.Core.Models;
 
 public class LegoColor
 {

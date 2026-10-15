@@ -1,0 +1,16 @@
+# Local Postgres for Visibrick.Sync (and later Visibrick.Api)
+#   docker compose up -d
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: visibrick
+      POSTGRES_PASSWORD: visibrick
+      POSTGRES_DB: visibrick
+    ports:
+      - "5432:5432"
+    volumes:
+      - visibrick-db:/var/lib/postgresql/data
+
+volumes:
+  visibrick-db:

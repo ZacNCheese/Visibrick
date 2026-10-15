@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Visibrick.Data;
-using Visibrick.Models;
+using Visibrick.Core.Models;
 
 namespace Visibrick.Services.API;
 
