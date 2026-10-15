@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Visibrick.CollectionPage"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24,24,24,32" Spacing="24" MaximumWidthRequest="720">
+
+            <!-- Header -->
+            <VerticalStackLayout Spacing="2">
+                <Label Text="My Collection"
+                       Style="{StaticResource ClayTitle}"
+                       SemanticProperties.HeadingLevel="Level1" />
+                <Label Text="Everything you own, down to the last brick."
+                       Style="{StaticResource ClaySubtitle}" />
+            </VerticalStackLayout>
+
+            <!-- Empty collection (collection tracking comes next) -->
+            <Border Style="{StaticResource ClayCard}" Padding="28">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+
+                <VerticalStackLayout Spacing="14">
+                    <Image Source="minifig_placeholder.png"
+                           WidthRequest="72"
+                           HeightRequest="72"
+                           HorizontalOptions="Center" />
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Your collection is empty"
+                               Style="{StaticResource ClayHeading}"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="Soon you'll be able to track the minifigs, sets and parts you own. For now, explore everything in the catalog."
+                               Style="{StaticResource ClaySubtitle}"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+
+                    <Button Text="Browse the catalog"
+                            Style="{StaticResource ClayButton}"
+                            Margin="0,8,0,0"
+                            Clicked="OnBrowseCatalogClicked">
+                        <Button.Shadow>
+                            <Shadow Brush="{StaticResource Primary}" Offset="0,10" Radius="22" Opacity="0.35" />
+                        </Button.Shadow>
+                    </Button>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

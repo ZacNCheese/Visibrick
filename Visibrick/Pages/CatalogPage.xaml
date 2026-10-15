@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Visibrick.Controls"
+             x:Class="Visibrick.CatalogPage"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24,24,24,32" Spacing="20" MaximumWidthRequest="720">
+
+            <!-- Header -->
+            <VerticalStackLayout Spacing="2" Margin="0,0,0,4">
+                <Label Text="Catalog"
+                       Style="{StaticResource ClayTitle}"
+                       SemanticProperties.HeadingLevel="Level1" />
+                <Label Text="Every LEGO minifig and color, from Rebrickable."
+                       Style="{StaticResource ClaySubtitle}" />
+            </VerticalStackLayout>
+
+            <!-- Category: Minifigs -->
+            <Border Style="{StaticResource ClayCard}"
+                    controls:PressFeedback.IsEnabled="True"
+                    Padding="16"
+                    SemanticProperties.Description="Minifigs"
+                    SemanticProperties.Hint="Opens the list of every minifig">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnMinifigsTapped" />
+                </Border.GestureRecognizers>
+
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                    <Border Style="{StaticResource ClayWell}" WidthRequest="64" HeightRequest="64" Padding="14">
+                        <Image Source="icon_minifigs.png" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                        <Label Text="Minifigs" Style="{StaticResource ClayHeading}" />
+                        <Label x:Name="MinifigCountLabel" Style="{StaticResource ClayCaption}" />
+                    </VerticalStackLayout>
+                    <Label Grid.Column="2" Text="›" FontSize="30" Style="{StaticResource ClaySubtitle}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Category: Colors -->
+            <Border Style="{StaticResource ClayCard}"
+                    controls:PressFeedback.IsEnabled="True"
+                    Padding="16"
+                    SemanticProperties.Description="Colors"
+                    SemanticProperties.Hint="Opens the list of every LEGO color">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnColorsTapped" />
+                </Border.GestureRecognizers>
+
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                    <Border Style="{StaticResource ClayWell}" WidthRequest="64" HeightRequest="64" Padding="14">
+                        <Image Source="icon_colors.png" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                        <Label Text="Colors" Style="{StaticResource ClayHeading}" />
+                        <Label x:Name="ColorCountLabel" Style="{StaticResource ClayCaption}" />
+                    </VerticalStackLayout>
+                    <Label Grid.Column="2" Text="›" FontSize="30" Style="{StaticResource ClaySubtitle}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Catalog status: the catalog updates itself in the background -->
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,4,0,0">
+                <ActivityIndicator x:Name="SyncSpinner"
+                                   IsVisible="False"
+                                   HeightRequest="16"
+                                   WidthRequest="16" />
+                <Label x:Name="StatusLabel"
+                       Style="{StaticResource ClayCaption}"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
