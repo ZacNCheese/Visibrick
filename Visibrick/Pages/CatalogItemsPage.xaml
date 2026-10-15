@@ -3,69 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:Visibrick.Core.Models;assembly=Visibrick.Core"
              xmlns:controls="clr-namespace:Visibrick.Controls"
+             xmlns:appmodels="clr-namespace:Visibrick.Models"
              x:Class="Visibrick.Pages.CatalogItemsPage"
              Shell.NavBarIsVisible="False">
 
     <!-- One page for every catalog type (minifigs, sets, parts, gear, books); opened with ?type=S etc. -->
 
     <ContentPage.Resources>
-        <!-- One item card. No Borders inside list cards: on Windows they can crash a re-laying-out
-             list with "Layout cycle detected", so the card is drawn and rounded shapes are BoxViews. -->
-        <DataTemplate x:Key="ItemCard" x:DataType="models:CatalogItem">
-            <Grid HeightRequest="274">
-                <controls:ClayCardBackground />
-
-                <!-- Margin = the card's shadow room (ClayCardBackground.CardInset) + 12 padding -->
-                <VerticalStackLayout Margin="20,22,20,26" Spacing="10">
-                    <!-- Image well -->
-                    <Grid HeightRequest="140">
-                        <BoxView CornerRadius="22"
-                                 Color="{AppThemeBinding Light={StaticResource ClayWell}, Dark={StaticResource ClayWellDark}}" />
-
-                        <!-- Shows while the image loads, and stays if BrickLink has no image -->
-                        <Image Source="item_placeholder.png"
-                               WidthRequest="56"
-                               HeightRequest="56"
-                               HorizontalOptions="Center"
-                               VerticalOptions="Center" />
-
-                        <Image Source="{Binding ImageUrl}"
-                               Aspect="AspectFit"
-                               Margin="8"
-                               SemanticProperties.Description="{Binding Name}" />
-                    </Grid>
-
-                    <Label Text="{Binding Name}"
-                           Style="{StaticResource ClayCardTitle}"
-                           MaxLines="2"
-                           LineBreakMode="TailTruncation"
-                           HeightRequest="40" />
-
-                    <Grid ColumnDefinitions="*,Auto">
-                        <!-- Number chip: opens the item on BrickLink -->
-                        <Grid HorizontalOptions="Start"
-                              controls:PressFeedback.IsEnabled="True"
-                              ToolTipProperties.Text="Open on BrickLink"
-                              SemanticProperties.Description="{Binding Number, StringFormat='{0} on BrickLink'}"
-                              SemanticProperties.Hint="Opens this item's page on BrickLink in your browser">
-                            <Grid.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnNumberTapped" />
-                            </Grid.GestureRecognizers>
-                            <BoxView CornerRadius="12"
-                                     Color="{AppThemeBinding Light={StaticResource ClayChip}, Dark={StaticResource ClayChipDark}}" />
-                            <Label Text="{Binding Number, StringFormat='{0} ↗'}"
-                                   Style="{StaticResource ClayChipLabel}"
-                                   Margin="10,4" />
-                        </Grid>
-
-                        <!-- Release year (empty for parts, which don't have one) -->
-                        <Label Grid.Column="1"
-                               Text="{Binding YearReleased}"
-                               Style="{StaticResource ClayCaption}"
-                               VerticalOptions="Center" />
-                    </Grid>
-                </VerticalStackLayout>
-            </Grid>
+        <!-- One item card (see Controls/ItemCardView.xaml) -->
+        <DataTemplate x:Key="ItemCard" x:DataType="appmodels:ItemCardModel">
+            <controls:ItemCardView />
         </DataTemplate>
     </ContentPage.Resources>
 

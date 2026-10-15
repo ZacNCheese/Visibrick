@@ -36,5 +36,20 @@
 	</array>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
+	<!-- Lets the browser hand Google/Apple sign-in back to the app (see Services/Auth/OAuthBrowser.cs) -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Visibrick sign-in</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>visibrick</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Shown when choosing a profile picture -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo from your library to use as your Visibrick profile picture.</string>
 </dict>
 </plist>

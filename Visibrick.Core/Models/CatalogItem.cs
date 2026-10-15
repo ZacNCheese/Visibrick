@@ -59,8 +59,18 @@ public class CatalogItem
         ? $"https://img.bricklink.com/ItemImage/PL/{Uri.EscapeDataString(Number)}.png"
         : $"https://img.bricklink.com/ItemImage/{Type}T/0/{Uri.EscapeDataString(Number)}.t2.png";
 
+    // A full-size image for the item's own page (sets and books can be several hundred KB)
+    [Ignore]
+    [JsonIgnore]
+    public string LargeImageUrl => Type == CatalogType.Parts.Code
+        ? $"https://img.bricklink.com/ItemImage/PL/{Uri.EscapeDataString(Number)}.png"
+        : $"https://img.bricklink.com/ItemImage/{Type}N/0/{Uri.EscapeDataString(Number)}.png";
+
     // The item's page on BrickLink
     [Ignore]
     [JsonIgnore]
     public string BrickLinkUrl => $"https://www.bricklink.com/v2/catalog/catalogitem.page?{Type}={Uri.EscapeDataString(Number)}";
+
+    // The same key as Key, for when you only have the type and number
+    public static string MakeKey(string type, string number) => $"{type}:{number}";
 }

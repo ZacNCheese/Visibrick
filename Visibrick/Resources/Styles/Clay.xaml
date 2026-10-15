@@ -84,6 +84,40 @@
         </Setter>
     </Style>
 
+    <!-- Sign-in buttons. Apple and Google ask for these colors; add their official logos before release. -->
+    <Style x:Key="AppleSignInButton" TargetType="Button" BasedOn="{StaticResource ClayButton}">
+        <Setter Property="Background" Value="#000000" />
+        <Setter Property="TextColor" Value="#FFFFFF" />
+        <Setter Property="HeightRequest" Value="52" />
+    </Style>
+
+    <Style x:Key="GoogleSignInButton" TargetType="Button" BasedOn="{StaticResource ClayButton}">
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="TextColor" Value="#1F1F1F" />
+        <Setter Property="BorderColor" Value="#DADCE0" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="HeightRequest" Value="52" />
+    </Style>
+
+    <!-- Filter chips, e.g. All / Minifigs / Sets on My Collection (the selected one is filled purple in code) -->
+    <Style x:Key="ClayFilterChip" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ClayChip}, Dark={StaticResource ClayChipDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ClayChipText}, Dark={StaticResource ClayChipTextDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="CornerRadius" Value="17" />
+        <Setter Property="BorderWidth" Value="0" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="HeightRequest" Value="34" />
+        <Setter Property="MinimumWidthRequest" Value="0" />
+        <Setter Property="controls:PressFeedback.IsEnabled" Value="True" />
+    </Style>
+
+    <Style x:Key="ClayErrorLabel" TargetType="Label">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#C62F35, Dark=#FF8A8F}" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
     <!-- Text-only button, e.g. the "‹ Catalog" back link at the top of a category page -->
     <Style x:Key="ClayLinkButton" TargetType="Button">
         <Setter Property="BackgroundColor" Value="Transparent" />

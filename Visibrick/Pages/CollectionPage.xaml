@@ -1,53 +1,161 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Visibrick.Controls"
+             xmlns:appmodels="clr-namespace:Visibrick.Models"
              x:Class="Visibrick.Pages.CollectionPage"
              Shell.NavBarIsVisible="False">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24,24,24,32" Spacing="24" MaximumWidthRequest="720">
+    <ContentPage.Resources>
+        <!-- One owned item (see Controls/ItemCardView.xaml) -->
+        <DataTemplate x:Key="ItemCard" x:DataType="appmodels:ItemCardModel">
+            <controls:ItemCardView />
+        </DataTemplate>
+    </ContentPage.Resources>
 
-            <!-- Header -->
-            <VerticalStackLayout Spacing="2">
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,*" Padding="16,24,16,0">
+
+            <!-- Header (right margin leaves room for the profile picture) -->
+            <VerticalStackLayout Padding="8,0,72,0" Spacing="2">
                 <Label Text="My Collection"
                        Style="{StaticResource ClayTitle}"
                        SemanticProperties.HeadingLevel="Level1" />
-                <Label Text="Everything you own, down to the last brick."
+                <Label x:Name="SubtitleLabel"
+                       Text="Everything you own, down to the last brick."
                        Style="{StaticResource ClaySubtitle}" />
             </VerticalStackLayout>
 
-            <!-- Empty collection (collection tracking comes next) -->
-            <Border Style="{StaticResource ClayCard}" Padding="28">
-                <Border.Shadow>
-                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
-                </Border.Shadow>
+            <!-- Filters and search (when there's something in the collection) -->
+            <VerticalStackLayout x:Name="ToolsPanel" Grid.Row="1" Spacing="12" Margin="8,16,8,8" IsVisible="False">
+                <FlexLayout x:Name="FilterBar" Wrap="Wrap" AlignItems="Center" />
+                <Border Style="{StaticResource ClayCard}" Padding="18,4" StrokeShape="RoundRectangle 24">
+                    <Border.Shadow>
+                        <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                    </Border.Shadow>
+                    <Entry x:Name="SearchEntry"
+                           Style="{StaticResource ClayEntry}"
+                           Placeholder="Search your collection"
+                           ClearButtonVisibility="WhileEditing"
+                           TextChanged="OnSearchTextChanged" />
+                </Border>
+            </VerticalStackLayout>
 
-                <VerticalStackLayout Spacing="14">
-                    <Image Source="minifig_placeholder.png"
-                           WidthRequest="72"
-                           HeightRequest="72"
-                           HorizontalOptions="Center" />
+            <!-- Owned items: a vertical list of rows of cards (see CardRow) -->
+            <CollectionView x:Name="OwnedList" Grid.Row="2" IsVisible="False">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="controls:CardRow">
+                        <controls:UniformRow Columns="{Binding Columns}"
+                                             BindableLayout.ItemsSource="{Binding Items}"
+                                             BindableLayout.ItemTemplate="{StaticResource ItemCard}" />
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
 
-                    <VerticalStackLayout Spacing="4">
-                        <Label Text="Your collection is empty"
-                               Style="{StaticResource ClayHeading}"
-                               HorizontalTextAlignment="Center" />
-                        <Label Text="Soon you'll be able to track the minifigs, sets and parts you own. For now, explore everything in the catalog."
-                               Style="{StaticResource ClaySubtitle}"
-                               HorizontalTextAlignment="Center" />
-                    </VerticalStackLayout>
+            <!-- Everything else: signed out, empty collection, or no search matches -->
+            <ScrollView x:Name="StatePanel" Grid.Row="2">
+                <VerticalStackLayout Padding="8,16,8,32" Spacing="24" MaximumWidthRequest="720">
 
-                    <Button Text="Browse the catalog"
-                            Style="{StaticResource ClayButton}"
-                            Margin="0,8,0,0"
-                            Clicked="OnBrowseCatalogClicked">
-                        <Button.Shadow>
-                            <Shadow Brush="{StaticResource Primary}" Offset="0,10" Radius="22" Opacity="0.35" />
-                        </Button.Shadow>
-                    </Button>
+                    <!-- Signed out: sign in to start a collection -->
+                    <Border x:Name="SignInCard" Style="{StaticResource ClayCard}" Padding="28">
+                        <Border.Shadow>
+                            <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                        </Border.Shadow>
+
+                        <VerticalStackLayout Spacing="14">
+                            <Image Source="brand_mark.png"
+                                   WidthRequest="72"
+                                   HeightRequest="72"
+                                   HorizontalOptions="Center" />
+
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="Sign in to start your collection"
+                                       Style="{StaticResource ClayHeading}"
+                                       HorizontalTextAlignment="Center" />
+                                <Label Text="Your collection is saved to your account, so it's there on every device."
+                                       Style="{StaticResource ClaySubtitle}"
+                                       HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout x:Name="SignInButtons" Spacing="12" Margin="0,8,0,0">
+                                <Button Text="Continue with Apple"
+                                        Style="{StaticResource AppleSignInButton}"
+                                        Clicked="OnAppleClicked" />
+                                <Button Text="Continue with Google"
+                                        Style="{StaticResource GoogleSignInButton}"
+                                        Clicked="OnGoogleClicked" />
+
+                                <Label Text="or" Style="{StaticResource ClayCaption}" HorizontalOptions="Center" />
+
+                                <Button Text="Continue with email"
+                                        Style="{StaticResource ClayButton}"
+                                        Clicked="OnEmailClicked">
+                                    <Button.Shadow>
+                                        <Shadow Brush="{StaticResource Primary}" Offset="0,10" Radius="22" Opacity="0.35" />
+                                    </Button.Shadow>
+                                </Button>
+                            </VerticalStackLayout>
+
+                            <!-- While Google/Apple sign-in is open in the browser -->
+                            <VerticalStackLayout x:Name="WaitingPanel" Spacing="8" IsVisible="False" Margin="0,8,0,0">
+                                <ActivityIndicator IsRunning="True" HeightRequest="24" />
+                                <Label Text="Finish signing in in your browser…"
+                                       Style="{StaticResource ClaySubtitle}"
+                                       HorizontalTextAlignment="Center" />
+                                <Button Text="Cancel"
+                                        Style="{StaticResource ClayLinkButton}"
+                                        HorizontalOptions="Center"
+                                        Clicked="OnCancelClicked" />
+                            </VerticalStackLayout>
+
+                            <Label x:Name="ErrorLabel"
+                                   Style="{StaticResource ClayErrorLabel}"
+                                   HorizontalTextAlignment="Center"
+                                   IsVisible="False" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Signed in, nothing collected yet (or nothing matches the search/filter) -->
+                    <Border x:Name="EmptyCard" Style="{StaticResource ClayCard}" Padding="28" IsVisible="False">
+                        <Border.Shadow>
+                            <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                        </Border.Shadow>
+
+                        <VerticalStackLayout Spacing="14">
+                            <Image Source="brand_mark.png"
+                                   WidthRequest="72"
+                                   HeightRequest="72"
+                                   HorizontalOptions="Center" />
+
+                            <VerticalStackLayout Spacing="4">
+                                <Label x:Name="EmptyTitle"
+                                       Text="Your collection is empty"
+                                       Style="{StaticResource ClayHeading}"
+                                       HorizontalTextAlignment="Center" />
+                                <Label x:Name="EmptyMessage"
+                                       Text="Find minifigs, sets, parts and more in the catalog, and tap + to add them here."
+                                       Style="{StaticResource ClaySubtitle}"
+                                       HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+
+                            <Button x:Name="BrowseButton"
+                                    Text="Browse the catalog"
+                                    Style="{StaticResource ClayButton}"
+                                    Margin="0,8,0,0"
+                                    Clicked="OnBrowseCatalogClicked">
+                                <Button.Shadow>
+                                    <Shadow Brush="{StaticResource Primary}" Offset="0,10" Radius="22" Opacity="0.35" />
+                                </Button.Shadow>
+                            </Button>
+                        </VerticalStackLayout>
+                    </Border>
                 </VerticalStackLayout>
-            </Border>
-        </VerticalStackLayout>
-    </ScrollView>
+            </ScrollView>
+        </Grid>
+
+        <!-- Account: profile picture in the top-right corner, and the menu it opens (on top of everything) -->
+        <controls:ProfileButton Menu="{x:Reference ProfileMenu}" HorizontalOptions="End" VerticalOptions="Start" Margin="0,24,24,0" />
+        <controls:ProfileMenu x:Name="ProfileMenu" />
+    </Grid>
 
 </ContentPage>

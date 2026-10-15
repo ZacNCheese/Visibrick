@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Logging;
 using Visibrick.Data;
 using Visibrick.Pages;
+using Visibrick.Services.Auth;
+using Visibrick.Services.Collection;
 using Visibrick.Services.Sync;
 
 namespace Visibrick;
@@ -33,10 +35,23 @@ public static class MauiProgram
 		builder.Services.AddSingleton<CatalogSyncService>();
 		builder.Services.AddSingleton<SyncOrchestrator>();
 
+		// Accounts (Supabase Auth)
+		builder.Services.AddSingleton<SupabaseAuthClient>();
+		builder.Services.AddSingleton<AuthService>();
+		builder.Services.AddSingleton<ProfileService>();
+
+		// The signed-in user's collection
+		builder.Services.AddSingleton<CollectionRepository>();
+		builder.Services.AddSingleton<UserDataClient>();
+		builder.Services.AddSingleton<CollectionService>();
+
 		// Tab pages live for the whole session; category pages are created each time you open one
 		builder.Services.AddSingleton<CollectionPage>();
 		builder.Services.AddSingleton<CatalogPage>();
 		builder.Services.AddTransient<CatalogItemsPage>();
+		builder.Services.AddTransient<SignInPage>();
+		builder.Services.AddTransient<ProfilePage>();
+		builder.Services.AddTransient<ItemDetailPage>();
 		return builder.Build();
 	}
 }

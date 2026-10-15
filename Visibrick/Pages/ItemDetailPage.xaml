@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Visibrick.Controls"
+             x:Class="Visibrick.Pages.ItemDetailPage"
+             Shell.NavBarIsVisible="False">
+
+    <!-- One catalog item: its details and how many you own. Opened with GoToAsync("item?type=S&number=75192-1"). -->
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24,12,24,32" Spacing="20" MaximumWidthRequest="720">
+
+            <Button Text="‹ Back"
+                    Style="{StaticResource ClayLinkButton}"
+                    Clicked="OnBackClicked" />
+
+            <!-- Image -->
+            <Border Style="{StaticResource ClayCard}" Padding="14">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <Border Style="{StaticResource ClayWell}" HeightRequest="300" Padding="16">
+                    <Grid>
+                        <Image Source="item_placeholder.png"
+                               WidthRequest="80"
+                               HeightRequest="80"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                        <Image x:Name="ItemImage" Aspect="AspectFit" />
+                    </Grid>
+                </Border>
+            </Border>
+
+            <!-- Name and number -->
+            <VerticalStackLayout Spacing="8">
+                <Label x:Name="TypeLabel" Style="{StaticResource ClayCaption}" />
+                <Label x:Name="NameLabel"
+                       Style="{StaticResource ClayTitle}"
+                       FontSize="26"
+                       SemanticProperties.HeadingLevel="Level1" />
+                <Border Style="{StaticResource ClayChip}"
+                        HorizontalOptions="Start"
+                        controls:PressFeedback.IsEnabled="True"
+                        ToolTipProperties.Text="Open on BrickLink"
+                        SemanticProperties.Hint="Opens this item's page on BrickLink in your browser">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnNumberTapped" />
+                    </Border.GestureRecognizers>
+                    <Label x:Name="NumberLabel" Style="{StaticResource ClayChipLabel}" FontSize="13" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- My collection -->
+            <Border Style="{StaticResource ClayCard}" Padding="24">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="My collection" Style="{StaticResource ClayHeading}" />
+
+                    <!-- Signed out -->
+                    <VerticalStackLayout x:Name="SignedOutPanel" Spacing="12">
+                        <Label Text="Sign in to keep track of what you own."
+                               Style="{StaticResource ClaySubtitle}" />
+                        <Button Text="Sign in"
+                                Style="{StaticResource ClayButton}"
+                                Clicked="OnSignInClicked" />
+                    </VerticalStackLayout>
+
+                    <!-- Signed in, not owned yet -->
+                    <Button x:Name="AddButton"
+                            Text="Add to my collection"
+                            Style="{StaticResource ClayButton}"
+                            Clicked="OnAddClicked">
+                        <Button.Shadow>
+                            <Shadow Brush="{StaticResource Primary}" Offset="0,10" Radius="22" Opacity="0.35" />
+                        </Button.Shadow>
+                    </Button>
+
+                    <!-- Signed in, owned -->
+                    <VerticalStackLayout x:Name="OwnedPanel" Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="14">
+                            <Label Text="How many you own"
+                                   Style="{StaticResource ClaySubtitle}"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Column="1"
+                                    Text="−"
+                                    Style="{StaticResource ClayButton}"
+                                    WidthRequest="48"
+                                    HeightRequest="48"
+                                    Padding="0"
+                                    FontSize="22"
+                                    SemanticProperties.Description="One fewer"
+                                    Clicked="OnMinusClicked" />
+                            <Label x:Name="QuantityLabel"
+                                   Grid.Column="2"
+                                   Style="{StaticResource ClayStatValue}"
+                                   MinimumWidthRequest="40"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Column="3"
+                                    Text="+"
+                                    Style="{StaticResource ClayButton}"
+                                    WidthRequest="48"
+                                    HeightRequest="48"
+                                    Padding="0"
+                                    FontSize="22"
+                                    SemanticProperties.Description="One more"
+                                    Clicked="OnPlusClicked" />
+                        </Grid>
+                        <Button Text="Remove from my collection"
+                                Style="{StaticResource ClayLinkButton}"
+                                TextColor="{AppThemeBinding Light=#C62F35, Dark=#FF8A8F}"
+                                Clicked="OnRemoveClicked" />
+                    </VerticalStackLayout>
+
+                    <Label x:Name="CollectionMessage" Style="{StaticResource ClayErrorLabel}" IsVisible="False" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Details from BrickLink -->
+            <Border Style="{StaticResource ClayCard}" Padding="24">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Details" Style="{StaticResource ClayHeading}" />
+                    <Grid x:Name="DetailsGrid" ColumnDefinitions="Auto,*" ColumnSpacing="20" RowSpacing="10" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

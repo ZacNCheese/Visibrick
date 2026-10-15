@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Visibrick.Controls"
+             xmlns:models="clr-namespace:Visibrick.Models"
+             x:Class="Visibrick.Controls.ItemCardView"
+             x:DataType="models:ItemCardModel">
+
+    <!-- One catalog item card, used by the catalog lists and My Collection.
+         Tap the card to open the item; tap + to add it to your collection; tap the number to open BrickLink.
+         No Borders inside: on Windows they can crash a re-laying-out list with "Layout cycle detected",
+         so the card is drawn and rounded shapes are BoxViews. -->
+
+    <Grid HeightRequest="274">
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnCardTapped" />
+        </Grid.GestureRecognizers>
+
+        <controls:ClayCardBackground />
+
+        <!-- Margin = the card's shadow room (ClayCardBackground.CardInset) + 12 padding -->
+        <VerticalStackLayout Margin="20,22,20,26" Spacing="10">
+            <!-- Image well -->
+            <Grid HeightRequest="140">
+                <BoxView CornerRadius="22"
+                         Color="{AppThemeBinding Light={StaticResource ClayWell}, Dark={StaticResource ClayWellDark}}" />
+
+                <!-- Shows while the image loads, and stays if BrickLink has no image -->
+                <Image Source="item_placeholder.png"
+                       WidthRequest="56"
+                       HeightRequest="56"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+
+                <Image Source="{Binding Item.ImageUrl}"
+                       Aspect="AspectFit"
+                       Margin="8"
+                       SemanticProperties.Description="{Binding Item.Name}" />
+
+                <!-- Not owned: + adds one to the collection -->
+                <Grid HorizontalOptions="End"
+                      VerticalOptions="Start"
+                      Margin="6"
+                      WidthRequest="32"
+                      HeightRequest="32"
+                      IsVisible="{Binding IsNotOwned}"
+                      controls:PressFeedback.IsEnabled="True"
+                      ToolTipProperties.Text="Add to my collection"
+                      SemanticProperties.Description="Add to my collection">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnAddTapped" />
+                    </Grid.GestureRecognizers>
+                    <BoxView CornerRadius="16"
+                             Color="{AppThemeBinding Light={StaticResource ClayChip}, Dark={StaticResource ClayChipDark}}" />
+                    <Label Text="+"
+                           FontFamily="OpenSansSemibold"
+                           FontSize="20"
+                           TextColor="{AppThemeBinding Light={StaticResource ClayChipText}, Dark={StaticResource ClayChipTextDark}}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Margin="0,0,0,2" />
+                </Grid>
+
+                <!-- Owned: ✓ or ×2; opens the item to change how many -->
+                <Grid HorizontalOptions="End"
+                      VerticalOptions="Start"
+                      Margin="6"
+                      MinimumWidthRequest="32"
+                      HeightRequest="32"
+                      IsVisible="{Binding IsOwned}"
+                      controls:PressFeedback.IsEnabled="True"
+                      ToolTipProperties.Text="In your collection"
+                      SemanticProperties.Description="{Binding BadgeText, StringFormat='In your collection: {0}'}">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnCardTapped" />
+                    </Grid.GestureRecognizers>
+                    <BoxView CornerRadius="16" Color="{StaticResource Primary}" />
+                    <Label Text="{Binding BadgeText}"
+                           FontFamily="OpenSansSemibold"
+                           FontSize="14"
+                           TextColor="White"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Margin="10,0" />
+                </Grid>
+            </Grid>
+
+            <Label Text="{Binding Item.Name}"
+                   Style="{StaticResource ClayCardTitle}"
+                   MaxLines="2"
+                   LineBreakMode="TailTruncation"
+                   HeightRequest="40" />
+
+            <Grid ColumnDefinitions="*,Auto">
+                <!-- Number chip: opens the item on BrickLink -->
+                <Grid HorizontalOptions="Start"
+                      controls:PressFeedback.IsEnabled="True"
+                      ToolTipProperties.Text="Open on BrickLink"
+                      SemanticProperties.Description="{Binding Item.Number, StringFormat='{0} on BrickLink'}"
+                      SemanticProperties.Hint="Opens this item's page on BrickLink in your browser">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnNumberTapped" />
+                    </Grid.GestureRecognizers>
+                    <BoxView CornerRadius="12"
+                             Color="{AppThemeBinding Light={StaticResource ClayChip}, Dark={StaticResource ClayChipDark}}" />
+                    <Label Text="{Binding Item.Number, StringFormat='{0} ↗'}"
+                           Style="{StaticResource ClayChipLabel}"
+                           Margin="10,4" />
+                </Grid>
+
+                <!-- Release year (empty for parts, which don't have one) -->
+                <Label Grid.Column="1"
+                       Text="{Binding Item.YearReleased}"
+                       Style="{StaticResource ClayCaption}"
+                       VerticalOptions="Center" />
+            </Grid>
+        </VerticalStackLayout>
+    </Grid>
+
+</ContentView>

@@ -24,6 +24,9 @@ public class CatalogRepository
             .Take(take)
             .ToListAsync();
 
+    public Task<CatalogItem?> GetAsync(string type, string number)
+        => _db.FindAsync<CatalogItem>(CatalogItem.MakeKey(type, number))!;
+
     public Task<int> CountAsync(string type, string? search = null)
         => Filter(type, search).CountAsync();
 

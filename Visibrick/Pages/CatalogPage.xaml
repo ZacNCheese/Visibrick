@@ -6,6 +6,7 @@
              x:Class="Visibrick.Pages.CatalogPage"
              Shell.NavBarIsVisible="False">
 
+    <Grid>
     <ScrollView>
         <VerticalStackLayout Padding="24,24,24,32" Spacing="20" MaximumWidthRequest="720">
 
@@ -61,5 +62,10 @@
             </HorizontalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
+
+    <!-- Account: profile picture in the top-right corner, and the menu it opens (on top of everything) -->
+    <controls:ProfileButton Menu="{x:Reference ProfileMenu}" HorizontalOptions="End" Margin="0,24,24,0" />
+    <controls:ProfileMenu x:Name="ProfileMenu" />
+    </Grid>
 
 </ContentPage>

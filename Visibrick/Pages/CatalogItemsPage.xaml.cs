@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using Visibrick.Controls;
 using Visibrick.Core.Models;
 using Visibrick.Data;
+using Visibrick.Models;
+using Visibrick.Services.Collection;
 using Visibrick.Services.Sync;
 
 namespace Visibrick.Pages;
@@ -18,12 +20,14 @@ public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 
 	private readonly CatalogRepository _repo;
 	private readonly SyncOrchestrator _sync;
+	private readonly CollectionService _collection;
 
 	// Which catalog this page shows; set from the "type" navigation parameter
 	private CatalogType _type = CatalogType.Minifigs;
 
-	// Every item loaded so far, and the same items grouped into rows of cards for the list
-	private readonly List<CatalogItem> _items = new();
+	// Every item loaded so far (with how many the user owns), and the same items grouped into rows of cards
+	private readonly List<ItemCardModel> _items = new();
+	private readonly Dictionary<string, ItemCardModel> _itemsByKey = new();
 	private ObservableCollection<CardRow> _rows = new();
 
 	private CancellationTokenSource? _searchCts;
@@ -44,11 +48,12 @@ public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 	// Bumped on every reload so a batch that finishes loading after a new search is thrown away
 	private int _generation;
 
-	public CatalogItemsPage(CatalogRepository repo, SyncOrchestrator sync)
+	public CatalogItemsPage(CatalogRepository repo, SyncOrchestrator sync, CollectionService collection)
 	{
 		InitializeComponent();
 		_repo = repo;
 		_sync = sync;
+		_collection = collection;
 		ItemList.ItemsSource = _rows;
 	}
 
@@ -67,6 +72,11 @@ public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 
 		_sync.DataChanged += OnDataChanged;
 		_sync.StateChanged += OnSyncStateChanged;
+		_collection.Changed += OnCollectionChanged;
+		_collection.ItemChanged += OnCollectionItemChanged;
+
+		// Quantities may have changed on another page (e.g. the item page) while this one was hidden
+		RefreshQuantities();
 
 		// First visit, or the catalog changed while this page was hidden
 		if (_loadedVersion != _sync.DataVersion)
@@ -80,6 +90,8 @@ public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 		// This page is created each time it's opened, so let go of the long-lived sync service
 		_sync.DataChanged -= OnDataChanged;
 		_sync.StateChanged -= OnSyncStateChanged;
+		_collection.Changed -= OnCollectionChanged;
+		_collection.ItemChanged -= OnCollectionItemChanged;
 	}
 
 	private async void OnDataChanged(object? sender, EventArgs e) => await ReloadAsync();
@@ -88,20 +100,19 @@ public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 
 	private async void OnBackClicked(object? sender, EventArgs e) => await Shell.Current.GoToAsync("..");
 
-	// The number chip on a card: open that item on BrickLink in the user's browser
-	private async void OnNumberTapped(object? sender, TappedEventArgs e)
-	{
-		if ((sender as BindableObject)?.BindingContext is not CatalogItem item)
-			return;
+	// Signed in/out or the collection reloaded: update every card's badge
+	private void OnCollectionChanged(object? sender, EventArgs e) => RefreshQuantities();
 
-		try
-		{
-			await Browser.Default.OpenAsync(item.BrickLinkUrl, BrowserLaunchMode.External);
-		}
-		catch (Exception ex)
-		{
-			System.Diagnostics.Debug.WriteLine("Couldn't open " + item.BrickLinkUrl + ": " + ex.Message);
-		}
+	private void OnCollectionItemChanged(object? sender, ItemQuantityChangedEventArgs e)
+	{
+		if (_itemsByKey.TryGetValue(e.Key, out var model))
+			model.Quantity = e.Quantity;
+	}
+
+	private void RefreshQuantities()
+	{
+		foreach (var model in _items)
+			model.Quantity = _collection.QuantityOf(model.Item.Type, model.Item.Number);
 	}
 
 	protected override void OnSizeAllocated(double width, double height)
@@ -155,6 +166,8 @@ public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 		if (_hasMore)
 		{
 			var leftover = _items.Count % _columns;
+			foreach (var dropped in _items.TakeLast(leftover))
+				_itemsByKey.Remove(dropped.Key);
 			_items.RemoveRange(_items.Count - leftover, leftover);
 		}
 
@@ -198,6 +211,7 @@ public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 		_isLoading = false;
 		_hasMore = true;
 		_items.Clear();
+		_itemsByKey.Clear();
 		_rows.Clear();
 
 		_totalCount = await _repo.CountAsync(_type.Code, _search);
@@ -224,8 +238,15 @@ public partial class CatalogItemsPage : ContentPage, IQueryAttributable
 		if (generation != _generation)
 			return;
 
-		_items.AddRange(batch);
-		foreach (var row in CardRow.Chunk(batch, columns))
+		var models = batch
+			.Select(item => new ItemCardModel(item, _collection.QuantityOf(item.Type, item.Number)))
+			.ToList();
+
+		_items.AddRange(models);
+		foreach (var model in models)
+			_itemsByKey[model.Key] = model;
+
+		foreach (var row in CardRow.Chunk(models, columns))
 			_rows.Add(row);
 
 		_hasMore = batch.Count == batchSize;

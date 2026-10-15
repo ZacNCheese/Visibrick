@@ -1,5 +1,6 @@
 using SQLite;
 using Visibrick.Core.Models;
+using Visibrick.Models;
 
 namespace Visibrick.Data;
 
@@ -13,6 +14,7 @@ public class AppDatabase
 
         // 👇 THIS creates your tables
         _db.CreateTableAsync<CatalogItem>().Wait();
+        _db.CreateTableAsync<CollectionEntry>().Wait();
 
         // Earlier versions kept minifigs and colors in their own tables. This file is only a downloaded copy
         // of the catalog, so the old tables can simply go; everything is now in CatalogItem.

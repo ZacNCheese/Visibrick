@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Visibrick.Controls"
+             x:Class="Visibrick.Pages.ProfilePage"
+             Shell.NavBarIsVisible="False">
+
+    <!-- Profile settings, opened from the profile menu in the top-right corner -->
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24,12,24,32" Spacing="20" MaximumWidthRequest="560">
+
+            <!-- Header -->
+            <VerticalStackLayout Spacing="2">
+                <Button Text="‹ Back"
+                        Style="{StaticResource ClayLinkButton}"
+                        Clicked="OnBackClicked" />
+                <Label Text="Profile settings"
+                       Style="{StaticResource ClayTitle}"
+                       SemanticProperties.HeadingLevel="Level1" />
+            </VerticalStackLayout>
+
+            <!-- Photo -->
+            <Border Style="{StaticResource ClayCard}" Padding="24">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="14">
+                    <controls:AvatarView x:Name="Avatar" Size="96" HorizontalOptions="Center" />
+                    <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+                        <Button Text="Change photo"
+                                Style="{StaticResource ClayLinkButton}"
+                                Clicked="OnChangePhotoClicked" />
+                        <Button x:Name="RemovePhotoButton"
+                                Text="Remove photo"
+                                Style="{StaticResource ClayLinkButton}"
+                                Clicked="OnRemovePhotoClicked" />
+                    </HorizontalStackLayout>
+                    <Label x:Name="PhotoMessage" Style="{StaticResource ClayCaption}" HorizontalTextAlignment="Center" IsVisible="False" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Display name -->
+            <Border Style="{StaticResource ClayCard}" Padding="24">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Display name" Style="{StaticResource ClayHeading}" />
+                    <Border Style="{StaticResource ClayCard}" Padding="18,4" StrokeShape="RoundRectangle 24">
+                        <Entry x:Name="NameEntry"
+                               Style="{StaticResource ClayEntry}"
+                               Placeholder="Your name"
+                               MaxLength="50"
+                               ReturnType="Done"
+                               Completed="OnSaveNameClicked"
+                               SemanticProperties.Description="Display name" />
+                    </Border>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label x:Name="NameMessage" Style="{StaticResource ClayCaption}" VerticalOptions="Center" />
+                        <Button Grid.Column="1"
+                                Text="Save"
+                                Style="{StaticResource ClayLinkButton}"
+                                Clicked="OnSaveNameClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Account -->
+            <Border Style="{StaticResource ClayCard}" Padding="24">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Account" Style="{StaticResource ClayHeading}" />
+                    <Label x:Name="EmailLabel" Style="{StaticResource ClaySubtitle}" />
+                    <Label x:Name="ProvidersLabel" Style="{StaticResource ClayCaption}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Password (email accounts only) -->
+            <Border x:Name="PasswordCard" Style="{StaticResource ClayCard}" Padding="24">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Change password" Style="{StaticResource ClayHeading}" />
+                    <Border Style="{StaticResource ClayCard}" Padding="18,4,8,4" StrokeShape="RoundRectangle 24">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Entry x:Name="NewPasswordEntry"
+                                   Style="{StaticResource ClayEntry}"
+                                   Placeholder="New password"
+                                   IsPassword="True"
+                                   ReturnType="Done"
+                                   Completed="OnChangePasswordClicked"
+                                   SemanticProperties.Description="New password" />
+                            <Button x:Name="ShowPasswordButton"
+                                    Grid.Column="1"
+                                    Text="Show"
+                                    Style="{StaticResource ClayLinkButton}"
+                                    Margin="8,0"
+                                    VerticalOptions="Center"
+                                    Clicked="OnShowPasswordClicked" />
+                        </Grid>
+                    </Border>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label x:Name="PasswordMessage"
+                               Text="At least 8 characters."
+                               Style="{StaticResource ClayCaption}"
+                               VerticalOptions="Center" />
+                        <Button Grid.Column="1"
+                                Text="Update password"
+                                Style="{StaticResource ClayLinkButton}"
+                                Clicked="OnChangePasswordClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Sign out"
+                    Style="{StaticResource ClayButton}"
+                    Clicked="OnSignOutClicked">
+                <Button.Shadow>
+                    <Shadow Brush="{StaticResource Primary}" Offset="0,10" Radius="22" Opacity="0.35" />
+                </Button.Shadow>
+            </Button>
+
+            <!-- Delete account -->
+            <Border Style="{StaticResource ClayCard}" Padding="24">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource ClayShadow}" Offset="0,12" Radius="28" Opacity="0.22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Delete account" Style="{StaticResource ClayHeading}" />
+                    <Label x:Name="DeleteMessage"
+                           Text="Permanently deletes your account, profile and collection. This can't be undone."
+                           Style="{StaticResource ClaySubtitle}" />
+                    <Button x:Name="DeleteButton"
+                            Text="Delete my account"
+                            Style="{StaticResource ClayLinkButton}"
+                            TextColor="{AppThemeBinding Light=#C62F35, Dark=#FF8A8F}"
+                            Clicked="OnDeleteClicked" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

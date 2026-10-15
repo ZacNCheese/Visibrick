@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Visibrick.Pages.SignInPage"
+             Shell.NavBarIsVisible="False">
+
+    <!-- Email sign-in and account creation. Opened from My Collection ("Continue with email"). -->
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24,12,24,32" Spacing="20" MaximumWidthRequest="560">
+
+            <!-- Header -->
+            <VerticalStackLayout Spacing="2">
+                <Button Text="‹ My Collection"
+                        Style="{StaticResource ClayLinkButton}"
+                        SemanticProperties.Hint="Goes back without signing in"
+                        Clicked="OnBackClicked" />
+                <Label x:Name="TitleLabel"
+                       Text="Sign in"
+                       Style="{StaticResource ClayTitle}"
+                       SemanticProperties.HeadingLevel="Level1" />
+                <Label x:Name="SubtitleLabel"
+                       Text="Welcome back. Sign in with your email."
+                       Style="{StaticResource ClaySubtitle}" />
+            </VerticalStackLayout>
+
+            <!-- Email -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Email" Style="{StaticResource ClayCardTitle}" />
+                <Border Style="{StaticResource ClayCard}" Padding="18,4" StrokeShape="RoundRectangle 24">
+                    <Entry x:Name="EmailEntry"
+                           Style="{StaticResource ClayEntry}"
+                           Placeholder="you@example.com"
+                           Keyboard="Email"
+                           IsSpellCheckEnabled="False"
+                           IsTextPredictionEnabled="False"
+                           ReturnType="Next"
+                           Completed="OnEmailCompleted"
+                           SemanticProperties.Description="Email address" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Password -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Password" Style="{StaticResource ClayCardTitle}" />
+                <Border Style="{StaticResource ClayCard}" Padding="18,4,8,4" StrokeShape="RoundRectangle 24">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Entry x:Name="PasswordEntry"
+                               Style="{StaticResource ClayEntry}"
+                               IsPassword="True"
+                               ReturnType="Go"
+                               Completed="OnPasswordCompleted"
+                               SemanticProperties.Description="Password" />
+                        <Button x:Name="ShowPasswordButton"
+                                Grid.Column="1"
+                                Text="Show"
+                                Style="{StaticResource ClayLinkButton}"
+                                Margin="8,0"
+                                VerticalOptions="Center"
+                                SemanticProperties.Hint="Shows or hides the password"
+                                Clicked="OnShowPasswordClicked" />
+                    </Grid>
+                </Border>
+                <Label x:Name="PasswordHint"
+                       Text="At least 8 characters. A longer phrase is stronger than a short, complex one."
+                       Style="{StaticResource ClayCaption}"
+                       IsVisible="False" />
+            </VerticalStackLayout>
+
+            <Label x:Name="ErrorLabel" Style="{StaticResource ClayErrorLabel}" IsVisible="False" />
+            <Label x:Name="InfoLabel" Style="{StaticResource ClaySubtitle}" IsVisible="False" />
+
+            <Grid>
+                <Button x:Name="PrimaryButton"
+                        Text="Sign in"
+                        Style="{StaticResource ClayButton}"
+                        Clicked="OnPrimaryClicked">
+                    <Button.Shadow>
+                        <Shadow Brush="{StaticResource Primary}" Offset="0,10" Radius="22" Opacity="0.35" />
+                    </Button.Shadow>
+                </Button>
+                <ActivityIndicator x:Name="BusyIndicator"
+                                   IsVisible="False"
+                                   IsRunning="False"
+                                   Color="White"
+                                   HeightRequest="24"
+                                   HorizontalOptions="Center" />
+            </Grid>
+
+            <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                <Button x:Name="ForgotButton"
+                        Text="Forgot your password?"
+                        Style="{StaticResource ClayLinkButton}"
+                        HorizontalOptions="Center"
+                        Clicked="OnForgotClicked" />
+                <Button x:Name="SwitchModeButton"
+                        Text="New to Visibrick? Create an account"
+                        Style="{StaticResource ClayLinkButton}"
+                        HorizontalOptions="Center"
+                        Clicked="OnSwitchModeClicked" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
