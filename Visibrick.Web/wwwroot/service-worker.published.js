@@ -24,7 +24,26 @@ async function onInstall(event) {
         .filter(asset => offlineAssetsInclude.some(pattern => pattern.test(asset.url)))
         .filter(asset => !offlineAssetsExclude.some(pattern => pattern.test(asset.url)))
         .map(asset => new Request(asset.url, { integrity: asset.hash, cache: 'no-cache' }));
-    await caches.open(cacheName).then(cache => cache.addAll(assetsRequests));
+    const cache = await caches.open(cacheName);
+    await Promise.all(assetsRequests.map(async request => {
+        const response = await fetch(request);
+        if (!response.ok)
+            throw new Error(`Couldn't cache ${request.url} (${response.status})`);
+        await cache.put(request, await withoutRedirect(response));
+    }));
+}
+
+// Cloudflare Pages redirects /index.html to /, so the cached copy is marked as redirected. Safari refuses to show
+// a page the service worker answers with a redirected response, so keep a clean copy instead.
+async function withoutRedirect(response) {
+    if (!response.redirected)
+        return response;
+
+    return new Response(await response.blob(), {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+    });
 }
 
 async function onActivate(event) {
@@ -49,6 +68,8 @@ async function onFetch(event) {
         const request = shouldServeIndexHtml ? 'index.html' : event.request;
         const cache = await caches.open(cacheName);
         cachedResponse = await cache.match(request);
+        if (cachedResponse)
+            cachedResponse = await withoutRedirect(cachedResponse);
     }
 
     return cachedResponse || fetch(event.request);

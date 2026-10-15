@@ -1,6 +1,5 @@
-@* "Sign in to start your collection" with Apple, Google and email *@
-@inject AuthService Auth
-@inject NavigationManager Navigation
+@* "Sign in to start your collection" with email. Google/Apple can go back here once they're turned on in
+   Supabase (Authentication → Sign In / Providers); AuthService.StartProviderSignInAsync already handles them. *@
 
 <div class="clay-card stack">
     <img class="brand-mark" src="images/brand_mark.svg" alt="" />
@@ -10,36 +9,6 @@
     </div>
 
     <div class="stack" style="gap: 12px; margin-top: 8px">
-        <button class="btn btn-apple" disabled="@_busy" @onclick='() => StartAsync("apple")'>Continue with Apple</button>
-        <button class="btn btn-google" disabled="@_busy" @onclick='() => StartAsync("google")'>Continue with Google</button>
-        <p class="caption center">or</p>
-        <a class="btn btn-primary" href="signin">Continue with email</a>
+        <a class="btn btn-primary" href="signin">Sign in or create an account</a>
     </div>
-
-    @if (_error is not null)
-    {
-        <p class="error center">@_error</p>
-    }
 </div>
-
-@code {
-    private bool _busy;
-    private string? _error;
-
-    // Leaves the site for Google/Apple; they send the browser back to /auth/callback
-    private async Task StartAsync(string provider)
-    {
-        _busy = true;
-        _error = null;
-        try
-        {
-            await Auth.StartProviderSignInAsync(provider);
-        }
-        catch (Exception ex)
-        {
-            _busy = false;
-            _error = "Sign-in didn't start. Please try again.";
-            Console.WriteLine(ex);
-        }
-    }
-}
