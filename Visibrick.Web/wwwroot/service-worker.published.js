@@ -31,6 +31,10 @@ async function onInstall(event) {
             throw new Error(`Couldn't cache ${request.url} (${response.status})`);
         await cache.put(request, await withoutRedirect(response));
     }));
+
+    // Take over as soon as the new version is cached, instead of waiting until every Visibrick tab is closed.
+    // index.html reloads the page when that happens, so people see a new upload right away.
+    self.skipWaiting();
 }
 
 // Cloudflare Pages redirects /index.html to /, so the cached copy is marked as redirected. Safari refuses to show
@@ -54,6 +58,9 @@ async function onActivate(event) {
     await Promise.all(cacheKeys
         .filter(key => key.startsWith(cacheNamePrefix) && key !== cacheName)
         .map(key => caches.delete(key)));
+
+    // Serve pages that are already open from the new version too
+    await self.clients.claim();
 }
 
 async function onFetch(event) {

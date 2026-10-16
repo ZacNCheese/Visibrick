@@ -27,6 +27,33 @@ else
         </div>
 
         <div class="toolbar">
+            @if (_tops.Count > 0)
+            {
+                @* Categories, biggest first (the selected one is moved to the front so it's always in view) *@
+                <nav class="chip-scroll" aria-label="Categories">
+                    <a class="chip-btn @(Cat is null ? "selected" : "")" href="@CategoryUri(null, null)">All</a>
+                    @foreach (var category in _tops.OrderByDescending(c => c.Top == Cat))
+                    {
+                        <a class="chip-btn @(category.Top == Cat ? "selected" : "")" href="@CategoryUri(category.Top, null)">
+                            @category.Top <span class="chip-count">@category.ItemCount.ToString("N0")</span>
+                        </a>
+                    }
+                </nav>
+
+                @if (Cat is not null && _subs.Count > 0)
+                {
+                    <nav class="chip-scroll sub" aria-label="@Cat categories">
+                        <a class="chip-btn @(Sub is null ? "selected" : "")" href="@CategoryUri(Cat, null)">All @Cat</a>
+                        @foreach (var category in _subs.OrderByDescending(c => c.Sub == Sub))
+                        {
+                            <a class="chip-btn @(category.Sub == Sub ? "selected" : "")" href="@CategoryUri(Cat, category.Sub)">
+                                @category.Sub <span class="chip-count">@category.ItemCount.ToString("N0")</span>
+                            </a>
+                        }
+                    </nav>
+                }
+            }
+
             <div class="input">
                 <input type="search" placeholder="Search by name or number" aria-label="Search @_type.Name"
                        value="@Q" @oninput="OnSearchInput" />
@@ -40,11 +67,13 @@ else
         else if (_items.Count == 0 && !_loading)
         {
             <div class="clay-card center stack">
-                <h2>@(string.IsNullOrWhiteSpace(Q) ? $"No {_type.CountNoun} yet" : "No matches")</h2>
+                <h2>@(IsFiltered ? "No matches" : $"No {_type.CountNoun} yet")</h2>
                 <p class="muted">
-                    @(string.IsNullOrWhiteSpace(Q)
-                        ? "They'll appear once the BrickLink catalog has been imported."
-                        : $"Nothing matches \"{Q}\". Try a different name or number.")
+                    @(!IsFiltered
+                        ? "They'll appear once the catalog has been imported."
+                        : string.IsNullOrWhiteSpace(Q)
+                            ? "Nothing in this category yet."
+                            : $"Nothing {(Cat is null ? "" : $"in {Sub ?? Cat} ")}matches \"{Q}\". Try a different name or number.")
                 </p>
             </div>
         }
@@ -75,7 +104,14 @@ else
     [Parameter] public string Slug { get; set; } = "";
     [SupplyParameterFromQuery] public string? Q { get; set; }
 
+    // Category filter, e.g. ?cat=Super%20Heroes&sub=Avengers (sets and minifigs)
+    [SupplyParameterFromQuery] public string? Cat { get; set; }
+    [SupplyParameterFromQuery] public string? Sub { get; set; }
+
     private CatalogType? _type;
+    private List<CatalogService.Category> _tops = [];
+    private List<CatalogService.Category> _subs = [];
+    private string? _categoriesFor;
     private readonly List<CatalogItem> _items = [];
     private int _total;
     private bool _loading;
@@ -84,9 +120,18 @@ else
     private int _generation;
     private CancellationTokenSource? _searchDelay;
 
+    private bool IsFiltered => !string.IsNullOrWhiteSpace(Q) || Cat is not null;
+
     private string SummaryText => _loading && _items.Count == 0
         ? ""
-        : string.IsNullOrWhiteSpace(Q) ? $"{_total:N0} {_type!.CountNoun}" : $"{_total:N0} matching {_type!.CountNoun}";
+        : $"{_total:N0} {(string.IsNullOrWhiteSpace(Q) ? "" : "matching ")}{_type!.CountNoun}{(Cat is null ? "" : $" in {Sub ?? Cat}")}";
+
+    // Sets and minifigs have categories worth filtering by (themes, licenses like Marvel or Disney)
+    private bool HasCategories => _type == CatalogType.Sets || _type == CatalogType.Minifigs;
+
+    // The same page with a different category (keeping the search)
+    private string CategoryUri(string? top, string? sub)
+        => Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["cat"] = top, ["sub"] = sub });
 
     protected override void OnInitialized()
     {
@@ -98,14 +143,42 @@ else
     protected override async Task OnParametersSetAsync()
     {
         _type = CatalogRoutes.FromSlug(Slug);
-        var key = $"{Slug}|{Q}";
+        var key = $"{Slug}|{Q}|{Cat}|{Sub}";
         if (_type is null || key == _loadedFor)
             return;
 
         _loadedFor = key;
         _items.Clear();
         _total = 0;
-        await LoadMoreAsync();
+        await Task.WhenAll(LoadMoreAsync(), LoadCategoriesAsync());
+    }
+
+    // The chip rows. If they can't load, the page still works without them.
+    private async Task LoadCategoriesAsync()
+    {
+        var key = $"{Slug}|{Cat}";
+        if (key == _categoriesFor)
+            return;
+
+        _categoriesFor = key;
+        if (!HasCategories)
+        {
+            _tops = [];
+            _subs = [];
+            return;
+        }
+
+        try
+        {
+            var tops = Catalog.GetCategoriesAsync(_type!);
+            var subs = Cat is null ? Task.FromResult(new List<CatalogService.Category>()) : Catalog.GetCategoriesAsync(_type!, Cat);
+            _tops = await tops;
+            _subs = await subs;
+        }
+        catch (AppException ex)
+        {
+            Console.WriteLine("Loading categories failed: " + ex.Message);
+        }
     }
 
     private async Task LoadMoreAsync()
@@ -116,7 +189,7 @@ else
 
         try
         {
-            var (rows, total) = await Catalog.SearchAsync(_type!, Q, _items.Count, PageSize);
+            var (rows, total) = await Catalog.SearchAsync(_type!, Q, _items.Count, PageSize, Cat, Sub);
 
             // A newer search started while this page was loading
             if (generation != _generation)

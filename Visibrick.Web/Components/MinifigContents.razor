@@ -28,8 +28,14 @@ else
     {
         <section class="stack">
             <div class="section-head"><h2>Made of</h2><span class="caption">@_parts.Sum(p => p.Quantity) pieces</span></div>
-            <PartGrid Parts="_parts" />
+            <PartGrid Parts="_parts" OwnerType="M" OwnerNumber="@MinifigNumber" />
         </section>
+    }
+
+    @if (_sets.Count == 0 && _parts.Count == 0)
+    {
+        @* About 2,600 BrickLink minifigs (mostly promos and rare figures) have no match on Rebrickable *@
+        <p class="muted center">There's no parts list or set list for this minifig yet.</p>
     }
 }
 

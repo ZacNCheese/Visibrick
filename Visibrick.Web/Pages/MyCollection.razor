@@ -32,10 +32,14 @@
     {
         <div class="toolbar">
             <div class="row" style="gap: 8px">
-                <button class="chip-btn @(_filter is null ? "selected" : "")" @onclick="() => FilterAsync(null)">All · @_counts.Values.Sum(c => c.Items).ToString("N0")</button>
+                <button class="chip-btn @(_filter is null && !_onlyMissing ? "selected" : "")" @onclick="() => FilterAsync(null)">All · @_counts.Values.Sum(c => c.Items).ToString("N0")</button>
                 @foreach (var type in CatalogType.All.Where(t => _counts.ContainsKey(t.Code)))
                 {
-                    <button class="chip-btn @(_filter == type.Code ? "selected" : "")" @onclick="() => FilterAsync(type.Code)">@type.Name · @_counts[type.Code].Items.ToString("N0")</button>
+                    <button class="chip-btn @(_filter == type.Code && !_onlyMissing ? "selected" : "")" @onclick="() => FilterAsync(type.Code)">@type.Name · @_counts[type.Code].Items.ToString("N0")</button>
+                }
+                @if (Collection.ItemsWithMissing > 0 || _onlyMissing)
+                {
+                    <button class="chip-btn missing @(_onlyMissing ? "selected" : "")" @onclick="ShowMissingAsync">Missing pieces · @Collection.ItemsWithMissing</button>
                 }
             </div>
             <div class="input">
@@ -84,6 +88,7 @@
     private bool _loading = true;
     private string? _error;
     private string? _filter;
+    private bool _onlyMissing;
     private string? _search;
     private int _generation;
     private CancellationTokenSource? _searchDelay;
@@ -138,6 +143,10 @@
         if (_filter is not null && !_counts.ContainsKey(_filter))
             _filter = null;
 
+        // Nothing is missing any more
+        if (_onlyMissing && Collection.ItemsWithMissing == 0)
+            _onlyMissing = false;
+
         await LoadMoreAsync();
     }
 
@@ -150,7 +159,7 @@
 
         try
         {
-            var (rows, total) = await Collection.SearchAsync(_filter, _search, _items.Count, PageSize);
+            var (rows, total) = await Collection.SearchAsync(_onlyMissing ? null : _filter, _search, _items.Count, PageSize, _onlyMissing);
             if (generation != _generation)
                 return;
 
@@ -173,6 +182,15 @@
     private async Task FilterAsync(string? type)
     {
         _filter = type;
+        _onlyMissing = false;
+        _items.Clear();
+        await LoadMoreAsync();
+    }
+
+    // Sets and minifigs that are missing at least one piece
+    private async Task ShowMissingAsync()
+    {
+        _onlyMissing = true;
         _items.Clear();
         await LoadMoreAsync();
     }

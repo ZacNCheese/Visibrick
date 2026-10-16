@@ -33,6 +33,31 @@ public static class Schema
         ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS bricklink_number text;   -- the same item's BrickLink number, if any
         ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS image_url        text;   -- Rebrickable's picture
         ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS num_parts        integer; -- sets: how many pieces
+        ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS set_count        integer; -- parts: how many sets use it
+
+        -- Parts are listed most-used first, so the catalog opens on familiar bricks rather than sticker sheets
+        CREATE INDEX IF NOT EXISTS catalog_items_type_set_count ON catalog_items (item_type, set_count DESC NULLS LAST, number);
+
+        -- Category filters: "Super Heroes / Avengers" → top "Super Heroes", sub "Avengers". Postgres keeps these up to
+        -- date from category_name itself, so the importers don't need to know about them.
+        ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS category_top text
+            GENERATED ALWAYS AS (nullif(split_part(category_name, ' / ', 1), '')) STORED;
+        ALTER TABLE catalog_items ADD COLUMN IF NOT EXISTS category_sub text
+            GENERATED ALWAYS AS (nullif(split_part(category_name, ' / ', 2), '')) STORED;
+        CREATE INDEX IF NOT EXISTS catalog_items_type_category
+            ON catalog_items (item_type, category_top, category_sub, year_released DESC NULLS LAST, number);
+
+        -- The category chips and their counts, worked out once per import (see RefreshCategories) instead of on
+        -- every visit. Rows with sub = null are top-level categories.
+        CREATE MATERIALIZED VIEW IF NOT EXISTS catalog_categories AS
+            SELECT item_type, category_top AS top, NULL::text AS sub, count(*)::integer AS item_count
+            FROM catalog_items WHERE category_top IS NOT NULL
+            GROUP BY item_type, category_top
+            UNION ALL
+            SELECT item_type, category_top, category_sub, count(*)::integer
+            FROM catalog_items WHERE category_sub IS NOT NULL
+            GROUP BY item_type, category_top, category_sub;
+        GRANT SELECT ON catalog_categories TO anon, authenticated;
 
         -- ---------------------------------------------------------------- what's in each set (from Rebrickable)
 
@@ -174,4 +199,7 @@ public static class Schema
         -- Tell Supabase's REST API about any new tables and views
         NOTIFY pgrst, 'reload schema';
         """;
+
+    // Recounts the category chips after an import
+    public const string RefreshCategories = "REFRESH MATERIALIZED VIEW catalog_categories";
 }

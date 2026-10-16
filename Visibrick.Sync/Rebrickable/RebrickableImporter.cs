@@ -184,6 +184,14 @@ public class RebrickableImporter
         }
         var includedSets = data.Sets.Select(s => s.Number).ToHashSet();
 
+        // How many (kept) sets use each part, for listing parts most-used first
+        var setCount = setParts.Keys
+            .Where(k => !k.Spare && includedSets.Contains(k.Owner))
+            .Select(k => (k.Part, k.Owner))
+            .Distinct()
+            .GroupBy(k => k.Part)
+            .ToDictionary(g => g.Key, g => g.Count());
+
         // Parts, each with the picture of the color it's most used in
         var mainPicture = partColors
             .Where(p => p.Value.Image is not null)
@@ -206,7 +214,8 @@ public class RebrickableImporter
                 CategoryId = row.Int("part_cat_id"),
                 CategoryName = partCategories.GetValueOrDefault(row.Int("part_cat_id")),
                 BrickLinkNumber = bl,
-                SourceImageUrl = mainPicture.GetValueOrDefault(number)
+                SourceImageUrl = mainPicture.GetValueOrDefault(number),
+                SetCount = setCount.TryGetValue(number, out var sets) ? sets : null
             });
         }
 
@@ -278,7 +287,7 @@ public class RebrickableImporter
         await ExecuteAsync(conn, tx, "DELETE FROM catalog_items WHERE item_type IN ('S', 'P')");
         await ExecuteAsync(conn, tx, "TRUNCATE colors, part_colors, set_parts, set_minifigs, set_subsets, minifig_parts");
 
-        await CopyAsync(conn, "catalog_items (item_type, number, name, category_id, category_name, year_released, bricklink_number, image_url, num_parts)",
+        await CopyAsync(conn, "catalog_items (item_type, number, name, category_id, category_name, year_released, bricklink_number, image_url, num_parts, set_count)",
             data.Sets.Concat(data.Parts), async (w, item) =>
             {
                 await Write(w, item.Type, NpgsqlDbType.Text);
@@ -290,6 +299,7 @@ public class RebrickableImporter
                 await Write(w, item.BrickLinkNumber, NpgsqlDbType.Text);
                 await Write(w, item.SourceImageUrl, NpgsqlDbType.Text);
                 await Write(w, item.NumParts, NpgsqlDbType.Integer);
+                await Write(w, item.SetCount, NpgsqlDbType.Integer);
             });
 
         await CopyAsync(conn, "colors (id, name, rgb, is_trans, bricklink_id)", data.Colors, async (w, c) =>

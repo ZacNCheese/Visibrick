@@ -107,6 +107,16 @@ else
     }
 }
 
+try
+{
+    await importer.RefreshCategoriesAsync();
+}
+catch (Exception ex)
+{
+    CatalogImporter.Log($"Updating the category list FAILED - {ex.Message}");
+    failed = true;
+}
+
 // A non-zero exit code lets a scheduler or CI job flag the run as failed
 return failed ? 1 : 0;
 

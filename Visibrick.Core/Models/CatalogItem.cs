@@ -66,6 +66,10 @@ public class CatalogItem
     [JsonPropertyName("num_parts")]
     public int? NumParts { get; set; }
 
+    // Rebrickable parts: how many sets use it (parts are listed most-used first)
+    [JsonPropertyName("set_count")]
+    public int? SetCount { get; set; }
+
     [Ignore]
     [JsonIgnore]
     public bool IsFromRebrickable => CatalogType.FromCode(Type)?.FromRebrickable == true;

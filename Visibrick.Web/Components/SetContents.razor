@@ -1,5 +1,10 @@
-@* What's in a set: sets inside it, its minifigs and its parts (spares separately). From Rebrickable. *@
+@* What's in a set: sets inside it, its minifigs and its parts (spares separately). From Rebrickable.
+   When the set is in your collection, its minifigs and parts can be ticked off to track what's missing. *@
+@implements IDisposable
 @inject ContentsService Contents
+@inject AuthService Auth
+@inject CollectionService Collection
+@inject ToastService Toast
 
 @if (_loading)
 {
@@ -26,13 +31,59 @@ else
 
     @if (_minifigs.Count > 0)
     {
+        var missingFigs = Tracking ? _minifigs.Sum(MissingFigs) : 0;
+
         <section class="stack">
-            <div class="section-head"><h2>Minifigs</h2><span class="caption">@_minifigs.Sum(m => m.Quantity)</span></div>
+            <div class="section-head">
+                <h2>Minifigs</h2>
+                <span class="caption">@_minifigs.Sum(m => m.Quantity)</span>
+                @if (missingFigs > 0)
+                {
+                    <span class="caption missing-text">· @missingFigs missing</span>
+                }
+            </div>
             <div class="card-grid">
                 @foreach (var fig in _minifigs)
                 {
                     var note = fig.Quantity > 1 ? $"×{fig.Quantity}" : null;
-                    if (fig.BrickLinkNumber is { } number)
+                    if (Tracking)
+                    {
+                        @* In your collection: tick off the minifigs you have, like the parts below *@
+                        var need = fig.Quantity * Copies;
+                        var missing = MissingFigs(fig);
+                        var have = need - missing;
+                        var link = fig.BrickLinkNumber is { } bl ? CatalogRoutes.Item(CatalogType.Minifigs.Code, bl) : null;
+                        var image = fig.BrickLinkNumber is { } blNumber
+                            ? new CatalogItem { Type = CatalogType.Minifigs.Code, Number = blNumber }.ImageUrl
+                            : fig.ImageUrl;
+
+                        <div class="item-card clay-card @(missing > 0 ? "is-missing" : "")" title="@fig.Name">
+                            <a class="image well press" href="@link">
+                                <img class="placeholder" src="images/item_placeholder.svg" alt="" />
+                                <img class="photo" src="@image" alt="@fig.Name" loading="lazy" onerror="this.style.display='none'" />
+                                @if (missing > 0)
+                                {
+                                    <span class="quantity">@missing missing</span>
+                                }
+                            </a>
+                            <a class="name" href="@link">@fig.Name</a>
+                            <div class="have-row">
+                                <input type="checkbox" checked="@(missing == 0)" aria-label="Have all @need of @fig.Name"
+                                       @onchange="e => SetFigHaveAsync(fig, (bool)e.Value! ? need : 0)" />
+                                @if (need > 1)
+                                {
+                                    <button class="step" aria-label="One fewer" disabled="@(have == 0)" @onclick="() => SetFigHaveAsync(fig, have - 1)">−</button>
+                                    <span class="count">@have/@need</span>
+                                    <button class="step" aria-label="One more" disabled="@(have == need)" @onclick="() => SetFigHaveAsync(fig, have + 1)">+</button>
+                                }
+                                else
+                                {
+                                    <span class="count">@(missing == 0 ? "Have it" : "Missing")</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (fig.BrickLinkNumber is { } number)
                     {
                         <ItemCard Item="@(new CatalogItem { Type = CatalogType.Minifigs.Code, Number = number, Name = fig.Name })" Note="@note" />
                     }
@@ -60,7 +111,7 @@ else
                 <h2>Parts</h2>
                 <span class="caption">@_parts.Sum(p => p.Quantity).ToString("N0") pieces · @_parts.Count.ToString("N0") different</span>
             </div>
-            <PartGrid Parts="_parts" />
+            <PartGrid Parts="_parts" OwnerType="S" OwnerNumber="@SetNumber" />
         </section>
     }
 
@@ -88,6 +139,44 @@ else
     private List<SetMinifig> _minifigs = [];
     private List<PartUse> _parts = [];
     private List<PartUse> _spares = [];
+
+    // Missing minifigs are stored with the missing parts, under the Rebrickable minifig number (fig-...,
+    // which no part number starts with) and this color id
+    private const int MinifigColor = -1;
+
+    private int Copies => Collection.QuantityOf(CatalogType.Sets.Code, SetNumber);
+
+    private bool Tracking => Auth.IsSignedIn && Copies > 0;
+
+    private int MissingFigs(SetMinifig fig)
+        => Collection.MissingOf(CatalogType.Sets.Code, SetNumber, fig.RebrickableNumber, MinifigColor);
+
+    private async Task SetFigHaveAsync(SetMinifig fig, int have)
+    {
+        var need = fig.Quantity * Copies;
+        try
+        {
+            await Collection.SetMissingAsync(CatalogType.Sets.Code, SetNumber, fig.RebrickableNumber, MinifigColor, Math.Clamp(need - have, 0, need));
+        }
+        catch (AppException ex)
+        {
+            Toast.Show("Couldn't save that: " + ex.Message);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Collection.Changed += OnChanged;
+        Auth.Changed += OnChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Collection.Changed -= OnChanged;
+        Auth.Changed -= OnChanged;
+    }
 
     protected override async Task OnParametersSetAsync()
     {

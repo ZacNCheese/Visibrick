@@ -9,6 +9,7 @@ public class CatalogService
 {
     private readonly SupabaseRest _rest;
     private Dictionary<string, int>? _counts;
+    private readonly Dictionary<string, List<Category>> _categories = new();
 
     public CatalogService(SupabaseRest rest)
     {
@@ -25,12 +26,32 @@ public class CatalogService
         return _counts = rows.ToDictionary(r => r.Kind, r => r.RowCount);
     }
 
-    // One page of a type, newest first. search matches the name or number (case-insensitive).
-    public Task<(List<CatalogItem> Rows, int Total)> SearchAsync(CatalogType type, string? search, int skip, int take)
+    // The categories of a type, biggest first: the top-level ones (top = null), or the sub-categories of one.
+    // Counted once per import (catalog_categories), and cached here since they only change when the catalog does.
+    public async Task<List<Category>> GetCategoriesAsync(CatalogType type, string? top = null)
     {
+        var key = $"{type.Code}|{top}";
+        if (_categories.TryGetValue(key, out var cached))
+            return cached;
+
+        var path = $"rest/v1/catalog_categories?select=top,sub,item_count&item_type=eq.{type.Code}" +
+            (top is null ? "&sub=is.null" : $"&top=eq.{Quote(top)}&sub=not.is.null") +
+            "&order=item_count.desc,top.asc,sub.asc";
+
+        return _categories[key] = await _rest.GetAsync<Category>(path);
+    }
+
+    // One page of a type: parts most-used first, everything else newest first.
+    // search matches the name or number (case-insensitive); top and sub limit it to a category.
+    public Task<(List<CatalogItem> Rows, int Total)> SearchAsync(CatalogType type, string? search, int skip, int take,
+        string? top = null, string? sub = null)
+    {
+        var order = type == CatalogType.Parts ? "set_count.desc.nullslast,number.asc" : "year_released.desc.nullslast,number.asc";
         var path = $"rest/v1/catalog_items?select=*&item_type=eq.{type.Code}" +
+            (top is null ? "" : $"&category_top=eq.{Quote(top)}") +
+            (sub is null ? "" : $"&category_sub=eq.{Quote(sub)}") +
             SearchFilter(search, "name", "number") +
-            $"&order=year_released.desc.nullslast,number.asc&limit={take}&offset={skip}";
+            $"&order={order}&limit={take}&offset={skip}";
 
         return _rest.GetPageAsync<CatalogItem>(path);
     }
@@ -60,6 +81,12 @@ public class CatalogService
     // A value for an eq. filter. Supabase takes everything after "eq." literally (quotes are only special inside
     // in.(...) and or=(...) lists), so it just needs URL-encoding.
     public static string Quote(string value) => Uri.EscapeDataString(value);
+
+    // A category chip: Top alone for a top-level category, Top + Sub for a sub-category
+    public record Category(
+        [property: JsonPropertyName("top")] string Top,
+        [property: JsonPropertyName("sub")] string? Sub,
+        [property: JsonPropertyName("item_count")] int ItemCount);
 
     private record ImportState(
         [property: JsonPropertyName("kind")] string Kind,

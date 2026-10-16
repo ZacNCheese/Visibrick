@@ -579,3 +579,84 @@ details[open] > summary.section-head { margin-bottom: 14px; }
 @media (max-width: 720px) {
     .part-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
 }
+
+/* ---------- Missing pieces ---------- */
+
+:root { --missing: #E8590C; --missing-soft: rgba(232, 89, 12, 0.14); }
+@media (prefers-color-scheme: dark) { :root { --missing: #FF9F5A; --missing-soft: rgba(255, 159, 90, 0.16); } }
+
+.missing-text { color: var(--missing); }
+
+.badge.missing { background: var(--missing); color: white; font-size: 12.5px; text-decoration: none; }
+
+.chip-btn.missing { color: var(--missing); }
+.chip-btn.missing.selected { background: var(--missing); color: white; }
+
+.tracking-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; border-radius: 22px; }
+.tracking-bar .chip-btn { flex: none; }
+
+.part-tile > a { color: inherit; }
+.part-tile a.name { color: var(--text); }
+
+.part-tile.is-missing { box-shadow: 0 0 0 2px var(--missing), 0 10px 24px var(--shadow); background: linear-gradient(var(--missing-soft), var(--missing-soft)), var(--surface); }
+.part-tile.is-missing .image img.photo { opacity: 0.45; filter: grayscale(0.6); }
+.part-tile.is-missing .quantity { background: var(--missing); }
+
+.have-row { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.have-row input[type="checkbox"] { width: 18px; height: 18px; margin: 0 4px 0 0; accent-color: var(--primary); cursor: pointer; flex: none; }
+.have-row .count { font-size: 12.5px; font-weight: 600; min-width: 0; white-space: nowrap; }
+.part-tile.is-missing .have-row .count { color: var(--missing); }
+.have-row .step {
+    width: 24px; height: 24px; flex: none; border: none; border-radius: 12px; padding: 0;
+    background: var(--chip); color: var(--chip-text); font: 600 15px "Open Sans", sans-serif; cursor: pointer;
+}
+.have-row .step:disabled { opacity: 0.35; cursor: default; }
+
+/* The base badge is pinned to the right; the missing badge sits on the left instead, sized to its text */
+.badge.missing { right: auto; padding: 0 10px; }
+
+/* Room for the checkbox and − count + under each part when tracking */
+.part-grid:has(.have-row) { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+.have-row { gap: 2px; }
+.have-row .count { flex: 1; text-align: center; }
+.have-row .step { width: 22px; height: 22px; font-size: 14px; }
+
+/* Minifig cards on an owned set's page, with the same have/missing controls as parts */
+.item-card > a.image { color: inherit; }
+.item-card > a.name { color: var(--text); }
+.item-card .quantity {
+    position: absolute; bottom: 6px; right: 8px; padding: 1px 9px; border-radius: 10px;
+    background: var(--missing); color: white; font-size: 12.5px; font-weight: 600;
+}
+.item-card.is-missing { box-shadow: 0 0 0 2px var(--missing), 0 10px 24px var(--shadow); background: linear-gradient(var(--missing-soft), var(--missing-soft)), var(--surface); }
+.item-card.is-missing .image img.photo { opacity: 0.45; filter: grayscale(0.6); }
+.item-card.is-missing .have-row .count { color: var(--missing); }
+
+/* ---------- Category chips (catalog) ---------- */
+
+/* One row that scrolls sideways, so a hundred categories don't push the items off the screen */
+.chip-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px 8px;
+    margin: -4px -2px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--chip) transparent;
+    -webkit-overflow-scrolling: touch;
+}
+
+.chip-scroll .chip-btn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.chip-scroll .chip-count { font-weight: 400; opacity: 0.7; font-size: 12px; }
+
+/* The sub-category row sits a little tighter under its parent row */
+.chip-scroll.sub { margin-top: -8px; }
+.chip-scroll.sub .chip-btn { height: 30px; font-size: 12.5px; }

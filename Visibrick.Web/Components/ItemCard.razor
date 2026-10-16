@@ -15,9 +15,16 @@
         <div class="name" title="@Item.Name">@Item.Name</div>
         <div class="footer">
             <span class="chip" title="@(Item.HasBrickLinkPage ? "Open on BrickLink" : "Open on Rebrickable")" @onclick="OpenLinkAsync" @onclick:preventDefault @onclick:stopPropagation>@Item.Number ↗</span>
-            <span class="caption">@(Note ?? Item.YearReleased?.ToString())</span>
+            <span class="caption">@(Note ?? Item.YearReleased?.ToString() ?? SetCountText)</span>
         </div>
     </a>
+
+    @* Owned sets and minifigs with missing pieces *@
+    @if (Missing > 0)
+    {
+        <a class="badge missing press" style="top: 18px; left: 18px" href="@CatalogRoutes.Item(Item.Type, Item.Number)"
+           title="@Missing @(Missing == 1 ? "piece" : "pieces") missing">@Missing missing</a>
+    }
 
     @* Outside the link so clicking it doesn't also open the item *@
     @if (Quantity > 0)
@@ -38,7 +45,17 @@
     // Shown instead of the year, e.g. "×2" for a minifig that comes twice in a set
     [Parameter] public string? Note { get; set; }
 
+    // Parts have no year; show how many sets use them instead
+    private string? SetCountText => Item.SetCount switch
+    {
+        null => null,
+        1 => "1 set",
+        var n => $"{n:N0} sets"
+    };
+
     private int Quantity => Collection.QuantityOf(Item.Type, Item.Number);
+
+    private int Missing => Collection.MissingTotal(Item.Type, Item.Number);
 
     private async Task AddAsync()
     {

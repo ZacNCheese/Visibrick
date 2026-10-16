@@ -1,38 +1,162 @@
-@* A grid of parts in a set or minifig: picture, name, color and how many. Long lists show the first
-   few dozen until "Show all" is pressed, since a big set can have over a thousand different parts. *@
+@* A grid of parts in a set or minifig: picture, name, color and how many, each linking to the part's page.
+   With OwnerType/OwnerNumber set and that set or minifig in your collection, each part also gets a checkbox
+   (ticked = you have them all) and a have/need count, so you can mark missing pieces. *@
+@implements IDisposable
+@inject AuthService Auth
+@inject CollectionService Collection
+@inject ToastService Toast
+
+@if (Tracking)
+{
+    var need = Parts.Sum(p => p.Quantity) * Copies;
+    var missing = Parts.Sum(Missing);
+
+    <div class="tracking-bar clay-card">
+        <div class="stack" style="gap: 2px">
+            @if (missing == 0)
+            {
+                <strong>Complete</strong>
+                <span class="caption">You have all @need.ToString("N0") pieces. Untick a part, or lower its count, if pieces are missing.</span>
+            }
+            else
+            {
+                <strong class="missing-text">@missing.ToString("N0") @(missing == 1 ? "piece" : "pieces") missing</strong>
+                <span class="caption">You have @((need - missing).ToString("N0")) of @need.ToString("N0") pieces.</span>
+            }
+        </div>
+        <div class="spacer"></div>
+        @if (missing > 0)
+        {
+            <button class="chip-btn @(_onlyMissing ? "selected" : "")" @onclick="() => _onlyMissing = !_onlyMissing">Show only missing</button>
+            <button class="link-btn" @onclick="ClearAsync">Mark all found</button>
+        }
+    </div>
+}
 
 <div class="part-grid">
-    @foreach (var part in _showAll ? Parts : Parts.Take(InitialCount))
+    @foreach (var part in Visible.Take(_showAll ? int.MaxValue : InitialCount))
     {
-        <a class="part-tile clay-card press" href="@CatalogRoutes.Item(CatalogType.Parts.Code, part.PartNumber)" title="@part.PartName">
-            <div class="image well">
-                <img class="placeholder" src="images/item_placeholder.svg" alt="" />
-                @if (part.ImageUrl is not null)
-                {
-                    <img class="photo" src="@part.ImageUrl" alt="@part.PartName" loading="lazy" onerror="this.style.display='none'" />
-                }
-                <span class="quantity">×@part.Quantity</span>
+        var link = CatalogRoutes.Item(CatalogType.Parts.Code, part.PartNumber);
+
+        @if (Tracking)
+        {
+            var need = part.Quantity * Copies;
+            var missing = Missing(part);
+            var have = need - missing;
+
+            <div class="part-tile clay-card @(missing > 0 ? "is-missing" : "")" title="@part.PartName">
+                <a class="press" href="@link">
+                    @TileImage(part, missing > 0 ? $"{missing} missing" : $"×{need}")
+                </a>
+                <a href="@link" class="name">@(part.PartName ?? part.PartNumber)</a>
+                @ColorLine(part)
+                <div class="have-row">
+                    <input type="checkbox" checked="@(missing == 0)" aria-label="Have all @need of @part.PartName"
+                           @onchange="e => SetHaveAsync(part, (bool)e.Value! ? need : 0)" />
+                    @if (need > 1)
+                    {
+                        <button class="step" aria-label="One fewer" disabled="@(have == 0)" @onclick="() => SetHaveAsync(part, have - 1)">−</button>
+                        <span class="count">@have/@need</span>
+                        <button class="step" aria-label="One more" disabled="@(have == need)" @onclick="() => SetHaveAsync(part, have + 1)">+</button>
+                    }
+                    else
+                    {
+                        <span class="count">@(missing == 0 ? "Have it" : "Missing")</span>
+                    }
+                </div>
             </div>
-            <div class="name">@(part.PartName ?? part.PartNumber)</div>
-            <div class="color">
-                <span class="swatch @(part.IsTrans ? "trans" : "")" style="background: #@(part.Rgb ?? "CCCCCC")"></span>
-                <span>@part.ColorName</span>
-            </div>
-        </a>
+        }
+        else
+        {
+            <a class="part-tile clay-card press" href="@link" title="@part.PartName">
+                @TileImage(part, $"×{part.Quantity}")
+                <div class="name">@(part.PartName ?? part.PartNumber)</div>
+                @ColorLine(part)
+            </a>
+        }
     }
 </div>
 
-@if (!_showAll && Parts.Count > InitialCount)
+@if (!_showAll && Visible.Count() > InitialCount)
 {
     <div class="load-more">
-        <button class="btn btn-primary" @onclick="() => _showAll = true">Show all @Parts.Count.ToString("N0")</button>
+        <button class="btn btn-primary" @onclick="() => _showAll = true">Show all @Visible.Count().ToString("N0")</button>
     </div>
 }
 
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<PartUse> Parts { get; set; } = [];
 
-    [Parameter] public int InitialCount { get; set; } = 48;
+    [Parameter] public int InitialCount { get; set; } = 1500;
+
+    // The set (S) or minifig (M) these parts belong to, to track missing pieces when it's in the collection
+    [Parameter] public string? OwnerType { get; set; }
+    [Parameter] public string? OwnerNumber { get; set; }
 
     private bool _showAll;
+    private bool _onlyMissing;
+
+    private int Copies => OwnerType is null || OwnerNumber is null ? 0 : Collection.QuantityOf(OwnerType, OwnerNumber);
+
+    private bool Tracking => Auth.IsSignedIn && Copies > 0;
+
+    private int Missing(PartUse part) => Collection.MissingOf(OwnerType!, OwnerNumber!, part.PartNumber, part.ColorId);
+
+    private IEnumerable<PartUse> Visible => Tracking && _onlyMissing ? Parts.Where(p => Missing(p) > 0) : Parts;
+
+    protected override void OnInitialized()
+    {
+        Collection.Changed += OnChanged;
+        Auth.Changed += OnChanged;
+    }
+
+    private async Task SetHaveAsync(PartUse part, int have)
+    {
+        var need = part.Quantity * Copies;
+        try
+        {
+            await Collection.SetMissingAsync(OwnerType!, OwnerNumber!, part.PartNumber, part.ColorId, Math.Clamp(need - have, 0, need));
+        }
+        catch (AppException ex)
+        {
+            Toast.Show("Couldn't save that: " + ex.Message);
+        }
+    }
+
+    private async Task ClearAsync()
+    {
+        try
+        {
+            await Collection.ClearMissingAsync(OwnerType!, OwnerNumber!);
+            _onlyMissing = false;
+        }
+        catch (AppException ex)
+        {
+            Toast.Show("Couldn't save that: " + ex.Message);
+        }
+    }
+
+    private static RenderFragment TileImage(PartUse part, string badge) =>
+        @<div class="image well">
+            <img class="placeholder" src="images/item_placeholder.svg" alt="" />
+            @if (part.ImageUrl is not null)
+            {
+                <img class="photo" src="@part.ImageUrl" alt="@part.PartName" loading="lazy" onerror="this.style.display='none'" />
+            }
+            <span class="quantity">@badge</span>
+        </div>;
+
+    private static RenderFragment ColorLine(PartUse part) =>
+        @<div class="color">
+            <span class="swatch @(part.IsTrans ? "trans" : "")" style="background: #@(part.Rgb ?? "CCCCCC")"></span>
+            <span>@part.ColorName</span>
+        </div>;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Collection.Changed -= OnChanged;
+        Auth.Changed -= OnChanged;
+    }
 }

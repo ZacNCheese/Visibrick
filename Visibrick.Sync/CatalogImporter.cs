@@ -31,6 +31,16 @@ public class CatalogImporter
         await cmd.ExecuteNonQueryAsync();
     }
 
+    // Recounts the category chips (catalog_categories) after the imports
+    public async Task RefreshCategoriesAsync()
+    {
+        if (_db is null)
+            return;
+
+        await using var cmd = _db.CreateCommand(Schema.RefreshCategories);
+        await cmd.ExecuteNonQueryAsync();
+    }
+
     public async Task ImportAsync(string path, CatalogType type)
     {
         var timer = Stopwatch.StartNew();
