@@ -1,0 +1,115 @@
+@* The colors a part comes in and the sets it appears in (newest first, a page at a time). From Rebrickable. *@
+@inject ContentsService Contents
+
+@if (_loading)
+{
+    <div class="center"><span class="spinner" aria-label="Loading"></span></div>
+}
+else if (_error is not null)
+{
+    <p class="error center">@_error</p>
+}
+else
+{
+    @if (_colors.Count > 0)
+    {
+        <section class="stack">
+            <div class="section-head"><h2>Colors</h2><span class="caption">@_colors.Count</span></div>
+            <div class="part-grid">
+                @foreach (var color in _colors)
+                {
+                    <div class="part-tile clay-card">
+                        <div class="image well">
+                            <img class="placeholder" src="images/item_placeholder.svg" alt="" />
+                            @if (color.ImageUrl is not null)
+                            {
+                                <img class="photo" src="@color.ImageUrl" alt="@color.ColorName" loading="lazy" onerror="this.style.display='none'" />
+                            }
+                        </div>
+                        <div class="color">
+                            <span class="swatch @(color.IsTrans ? "trans" : "")" style="background: #@(color.Rgb ?? "CCCCCC")"></span>
+                            <span>@color.ColorName</span>
+                        </div>
+                        <div class="caption">@(color.SetCount == 1 ? "1 set" : $"{color.SetCount:N0} sets")</div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    @if (_total > 0)
+    {
+        <section class="stack">
+            <div class="section-head"><h2>Appears in</h2><span class="caption">@_total.ToString("N0") @(_total == 1 ? "set" : "sets")</span></div>
+            <div class="card-grid">
+                @foreach (var set in _sets)
+                {
+                    <ItemCard Item="set" />
+                }
+            </div>
+            @if (_sets.Count < _total)
+            {
+                <div class="load-more">
+                    <button class="btn btn-primary" disabled="@_loadingMore" @onclick="LoadMoreAsync">
+                        @(_loadingMore ? "Loading…" : "Show more")
+                    </button>
+                </div>
+            }
+        </section>
+    }
+}
+
+@code {
+    private const int PageSize = 24;
+
+    [Parameter, EditorRequired] public string PartNumber { get; set; } = "";
+
+    private string? _loadedFor;
+    private bool _loading = true;
+    private bool _loadingMore;
+    private string? _error;
+    private List<PartColor> _colors = [];
+    private readonly List<CatalogItem> _sets = [];
+    private int _total;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == PartNumber)
+            return;
+
+        _loadedFor = PartNumber;
+        _loading = true;
+        _error = null;
+        _sets.Clear();
+        try
+        {
+            var colors = Contents.GetPartColorsAsync(PartNumber);
+            var sets = Contents.GetPartSetsAsync(PartNumber, 0, PageSize);
+            _colors = await colors;
+            var (rows, total) = await sets;
+            _sets.AddRange(rows);
+            _total = total;
+        }
+        catch (AppException ex)
+        {
+            _error = "Couldn't load this part's colors and sets: " + ex.Message;
+        }
+        _loading = false;
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        _loadingMore = true;
+        try
+        {
+            var (rows, total) = await Contents.GetPartSetsAsync(PartNumber, _sets.Count, PageSize);
+            _sets.AddRange(rows);
+            _total = total;
+        }
+        catch (AppException ex)
+        {
+            _error = ex.Message;
+        }
+        _loadingMore = false;
+    }
+}

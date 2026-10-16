@@ -1,0 +1,38 @@
+@* A grid of parts in a set or minifig: picture, name, color and how many. Long lists show the first
+   few dozen until "Show all" is pressed, since a big set can have over a thousand different parts. *@
+
+<div class="part-grid">
+    @foreach (var part in _showAll ? Parts : Parts.Take(InitialCount))
+    {
+        <a class="part-tile clay-card press" href="@CatalogRoutes.Item(CatalogType.Parts.Code, part.PartNumber)" title="@part.PartName">
+            <div class="image well">
+                <img class="placeholder" src="images/item_placeholder.svg" alt="" />
+                @if (part.ImageUrl is not null)
+                {
+                    <img class="photo" src="@part.ImageUrl" alt="@part.PartName" loading="lazy" onerror="this.style.display='none'" />
+                }
+                <span class="quantity">×@part.Quantity</span>
+            </div>
+            <div class="name">@(part.PartName ?? part.PartNumber)</div>
+            <div class="color">
+                <span class="swatch @(part.IsTrans ? "trans" : "")" style="background: #@(part.Rgb ?? "CCCCCC")"></span>
+                <span>@part.ColorName</span>
+            </div>
+        </a>
+    }
+</div>
+
+@if (!_showAll && Parts.Count > InitialCount)
+{
+    <div class="load-more">
+        <button class="btn btn-primary" @onclick="() => _showAll = true">Show all @Parts.Count.ToString("N0")</button>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<PartUse> Parts { get; set; } = [];
+
+    [Parameter] public int InitialCount { get; set; } = 48;
+
+    private bool _showAll;
+}

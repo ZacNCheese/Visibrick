@@ -9,7 +9,7 @@
 
 <PageTitle>@(_item?.Name ?? "Item") · Visibrick</PageTitle>
 
-<div class="page narrow">
+<div class="page medium">
     <div class="page-header">
         <a class="link-btn back" href="javascript:history.back()">‹ Back</a>
     </div>
@@ -22,7 +22,7 @@
     {
         <div class="clay-card center stack">
             <h2>Item not found</h2>
-            <p class="muted">@(_error ?? $"BrickLink's catalog doesn't have \"{Number}\".") <a href="catalog">Browse the catalog</a>.</p>
+            <p class="muted">@(_error ?? $"The catalog doesn't have \"{Number}\".") <a href="catalog">Browse the catalog</a>.</p>
         </div>
     }
     else
@@ -41,8 +41,18 @@
             <div class="stack" style="gap: 8px">
                 <p class="caption">@(type is null ? "" : CatalogRoutes.Singular(type))</p>
                 <h1 style="font-size: 26px">@_item.Name</h1>
-                <a class="chip press" style="align-self: flex-start; font-size: 13px" href="@_item.BrickLinkUrl" target="_blank" rel="noopener"
-                   title="Open on BrickLink">@_item.Number ↗</a>
+                <div class="row" style="gap: 8px">
+                    @if (_item.IsFromRebrickable)
+                    {
+                        <a class="chip press" style="font-size: 13px" href="@_item.RebrickableUrl" target="_blank" rel="noopener"
+                           title="Open on Rebrickable">Rebrickable @_item.Number ↗</a>
+                    }
+                    @if (_item.HasBrickLinkPage)
+                    {
+                        <a class="chip press" style="font-size: 13px" href="@_item.BrickLinkUrl" target="_blank" rel="noopener"
+                           title="Open on BrickLink">BrickLink @(_item.BrickLinkNumber ?? _item.Number) ↗</a>
+                    }
+                </div>
             </div>
 
             @* My collection *@
@@ -78,17 +88,47 @@
                 }
             </div>
 
-            @* Details from BrickLink *@
+            @* Details from BrickLink or Rebrickable *@
             <div class="clay-card stack">
                 <h2>Details</h2>
                 <dl class="details">
-                    @Detail("Category", _item.CategoryName)
+                    @Detail(_item.Type == CatalogType.Sets.Code ? "Theme" : "Category", _item.CategoryName)
                     @Detail("Released", _item.YearReleased?.ToString())
+                    @Detail("Pieces", _item.NumParts is > 0 ? _item.NumParts.Value.ToString("N0") : null)
                     @Detail("Weight", _item.WeightGrams is { } grams ? $"{grams:0.##} g" : null)
                     @Detail("Dimensions", _item.Dimensions is { } size ? size + " cm" : null)
                     @Detail("Also known as", _item.AlternateNumbers)
                 </dl>
             </div>
+
+            @* What's inside, and where it appears (from Rebrickable's data) *@
+            @switch (_item.Type)
+            {
+                case "S":
+                    <SetContents SetNumber="@_item.Number" />
+                    break;
+                case "M":
+                    <MinifigContents MinifigNumber="@_item.Number" />
+                    break;
+                case "P":
+                    <PartContents PartNumber="@_item.Number" />
+                    break;
+            }
+
+            <p class="caption center">
+                @if (_item.Type is "S" or "P")
+                {
+                    <text>Set and part data from <a href="https://rebrickable.com" target="_blank" rel="noopener">Rebrickable</a>.</text>
+                }
+                else if (_item.Type == "M")
+                {
+                    <text>Minifig data from <a href="https://www.bricklink.com" target="_blank" rel="noopener">BrickLink</a>; sets and parts from <a href="https://rebrickable.com" target="_blank" rel="noopener">Rebrickable</a>.</text>
+                }
+                else
+                {
+                    <text>Data from <a href="https://www.bricklink.com" target="_blank" rel="noopener">BrickLink</a>.</text>
+                }
+            </p>
         </div>
     }
 </div>

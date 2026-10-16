@@ -1,39 +1,51 @@
 ﻿using Npgsql;
+using Visibrick.Core.BrickLink;
 using Visibrick.Core.Models;
 using Visibrick.Sync;
+using Visibrick.Sync.Rebrickable;
 
-// Imports BrickLink catalog downloads (tab-delimited .txt files) into Postgres (Supabase).
-// Download the files from https://www.bricklink.com/catalogDownload.asp and put them in data/bricklink/.
+// Imports the catalog into Postgres (Supabase):
+//   - BrickLink catalog downloads (tab-delimited .txt files) in data/bricklink/: minifigs, gear and books.
+//     Download them from https://www.bricklink.com/catalogDownload.asp
+//   - Rebrickable's all_downloads.zip in data/rebrickable/: sets, parts, and what's in each set.
+//     Download it from https://rebrickable.com/downloads
 //
-//   dotnet run --project Visibrick.Sync                    import data/bricklink into the database in VISIBRICK_DB
-//   dotnet run --project Visibrick.Sync -- <folder>        import a different folder
+//   dotnet run --project Visibrick.Sync                    import both folders into the database in VISIBRICK_DB
+//   dotnet run --project Visibrick.Sync -- <folder>        use a different BrickLink folder
 //   dotnet run --project Visibrick.Sync -- --dry-run       read and check the files only, no database needed
 //   dotnet run --project Visibrick.Sync -- --force         re-import even if a file hasn't changed
 
 var dryRun = args.Contains("--dry-run");
 var force = args.Contains("--force");
-var folder = args.FirstOrDefault(a => !a.StartsWith("--")) ?? Path.Combine("data", "bricklink");
+var brickLinkFolder = args.FirstOrDefault(a => !a.StartsWith("--")) ?? Path.Combine("data", "bricklink");
+var rebrickableFolder = Path.Combine("data", "rebrickable");
 
-if (!Directory.Exists(folder))
+if (!Directory.Exists(brickLinkFolder) && !Directory.Exists(rebrickableFolder))
 {
-    CatalogImporter.Log($"Folder not found: {Path.GetFullPath(folder)}");
+    CatalogImporter.Log($"Neither {Path.GetFullPath(brickLinkFolder)} nor {Path.GetFullPath(rebrickableFolder)} exists.");
     CatalogImporter.Log("Run this from the repository root, or pass the folder that holds the BrickLink downloads.");
     return 1;
 }
 
-// Which supported downloads are in the folder; anything else is listed and ignored
-var files = new List<(string Path, CatalogType Type)>();
-foreach (var path in Directory.GetFiles(folder, "*.txt").OrderBy(p => p))
+// BrickLink downloads in the folder; anything else is listed and ignored. Sets and parts now come from
+// Rebrickable, but BrickLink's files for them (if present) are still read to check Rebrickable's BrickLink numbers.
+var brickLinkFiles = new List<(string Path, CatalogType Type)>();
+foreach (var path in Directory.Exists(brickLinkFolder) ? Directory.GetFiles(brickLinkFolder, "*.txt").Order() : Enumerable.Empty<string>())
 {
     if (CatalogType.FromFileName(path) is { } type)
-        files.Add((path, type));
+        brickLinkFiles.Add((path, type));
     else
         CatalogImporter.Log($"{Path.GetFileName(path)}: not a supported download (expected Minifigures, Sets, Parts, Gear or Books), ignored");
 }
 
-if (files.Count == 0)
+// The newest Rebrickable zip, if there is one
+var rebrickableZip = Directory.Exists(rebrickableFolder)
+    ? Directory.GetFiles(rebrickableFolder, "*.zip").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
+    : null;
+
+if (brickLinkFiles.Count == 0 && rebrickableZip is null)
 {
-    CatalogImporter.Log($"No BrickLink downloads found in {Path.GetFullPath(folder)}");
+    CatalogImporter.Log("Nothing to import: no BrickLink downloads in data/bricklink and no zip in data/rebrickable.");
     return 1;
 }
 
@@ -54,10 +66,16 @@ catch (Exception ex)
     return 1;
 }
 
-// Each file is its own transaction, so one failing doesn't undo the others
+// Each import is its own transaction, so one failing doesn't undo the others
 var failed = false;
-foreach (var (path, type) in files)
+foreach (var (path, type) in brickLinkFiles)
 {
+    if (type.FromRebrickable)
+    {
+        CatalogImporter.Log($"{Path.GetFileName(path)}: {type.CountNoun} now come from Rebrickable; only used to check BrickLink numbers");
+        continue;
+    }
+
     try
     {
         await importer.ImportAsync(path, type);
@@ -69,5 +87,36 @@ foreach (var (path, type) in files)
     }
 }
 
+if (rebrickableZip is null)
+    CatalogImporter.Log($"No Rebrickable zip in {Path.GetFullPath(rebrickableFolder)}; sets and parts not updated");
+else
+{
+    try
+    {
+        var brickLinkNumbers = new BrickLinkNumbers(
+            await NumbersAsync(CatalogType.Sets),
+            await NumbersAsync(CatalogType.Parts),
+            await NumbersAsync(CatalogType.Minifigs));
+
+        await new RebrickableImporter(db, force, brickLinkNumbers).ImportAsync(rebrickableZip);
+    }
+    catch (Exception ex)
+    {
+        CatalogImporter.Log($"{Path.GetFileName(rebrickableZip)}: FAILED - {ex.Message}");
+        failed = true;
+    }
+}
+
 // A non-zero exit code lets a scheduler or CI job flag the run as failed
 return failed ? 1 : 0;
+
+// Every item number in one BrickLink download, or null if it isn't in the folder
+async Task<HashSet<string>?> NumbersAsync(CatalogType type)
+{
+    var path = brickLinkFiles.FirstOrDefault(f => f.Type == type).Path;
+    if (path is null)
+        return null;
+
+    var file = await BrickLinkCatalogFile.ReadAsync(path, type);
+    return file.ParseItems().Select(i => i.Number).ToHashSet();
+}

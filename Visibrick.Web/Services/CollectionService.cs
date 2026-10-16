@@ -183,6 +183,15 @@ public class OwnedItem
     [JsonPropertyName("year_released")]
     public int? YearReleased { get; set; }
 
+    [JsonPropertyName("bricklink_number")]
+    public string? BrickLinkNumber { get; set; }
+
+    [JsonPropertyName("image_url")]
+    public string? ImageUrl { get; set; }
+
+    [JsonPropertyName("num_parts")]
+    public int? NumParts { get; set; }
+
     // The same item as a catalog item, for the shared item card
     public CatalogItem ToCatalogItem() => new()
     {
@@ -190,6 +199,9 @@ public class OwnedItem
         Number = Number,
         Name = Name ?? Number,
         CategoryName = CategoryName,
-        YearReleased = YearReleased
+        YearReleased = YearReleased,
+        BrickLinkNumber = BrickLinkNumber,
+        SourceImageUrl = ImageUrl,
+        NumParts = NumParts
     };
 }

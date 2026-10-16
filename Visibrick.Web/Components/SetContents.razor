@@ -1,0 +1,118 @@
+@* What's in a set: sets inside it, its minifigs and its parts (spares separately). From Rebrickable. *@
+@inject ContentsService Contents
+
+@if (_loading)
+{
+    <div class="center"><span class="spinner" aria-label="Loading"></span></div>
+}
+else if (_error is not null)
+{
+    <p class="error center">@_error</p>
+}
+else
+{
+    @if (_subsets.Count > 0)
+    {
+        <section class="stack">
+            <div class="section-head"><h2>Sets inside</h2><span class="caption">@_subsets.Count</span></div>
+            <div class="card-grid">
+                @foreach (var set in _subsets)
+                {
+                    <ItemCard Item="set" />
+                }
+            </div>
+        </section>
+    }
+
+    @if (_minifigs.Count > 0)
+    {
+        <section class="stack">
+            <div class="section-head"><h2>Minifigs</h2><span class="caption">@_minifigs.Sum(m => m.Quantity)</span></div>
+            <div class="card-grid">
+                @foreach (var fig in _minifigs)
+                {
+                    var note = fig.Quantity > 1 ? $"×{fig.Quantity}" : null;
+                    if (fig.BrickLinkNumber is { } number)
+                    {
+                        <ItemCard Item="@(new CatalogItem { Type = CatalogType.Minifigs.Code, Number = number, Name = fig.Name })" Note="@note" />
+                    }
+                    else
+                    {
+                        @* BrickLink doesn't list this one, so there's no page to open *@
+                        <div class="item-card clay-card" title="Not in BrickLink's catalog">
+                            <div class="image well">
+                                <img class="placeholder" src="images/item_placeholder.svg" alt="" />
+                                <img class="photo" src="@fig.ImageUrl" alt="@fig.Name" loading="lazy" onerror="this.style.display='none'" />
+                            </div>
+                            <div class="name">@fig.Name</div>
+                            <div class="footer"><span class="caption">Not on BrickLink</span><span class="caption">@note</span></div>
+                        </div>
+                    }
+                }
+            </div>
+        </section>
+    }
+
+    @if (_parts.Count > 0)
+    {
+        <section class="stack">
+            <div class="section-head">
+                <h2>Parts</h2>
+                <span class="caption">@_parts.Sum(p => p.Quantity).ToString("N0") pieces · @_parts.Count.ToString("N0") different</span>
+            </div>
+            <PartGrid Parts="_parts" />
+        </section>
+    }
+
+    @if (_spares.Count > 0)
+    {
+        <details class="stack">
+            <summary class="section-head"><h2>Spare parts</h2><span class="caption">@_spares.Sum(p => p.Quantity) extra pieces in the box</span></summary>
+            <PartGrid Parts="_spares" />
+        </details>
+    }
+
+    @if (_parts.Count == 0 && _minifigs.Count == 0 && _subsets.Count == 0)
+    {
+        <p class="muted center">There's no parts list for this set yet.</p>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public string SetNumber { get; set; } = "";
+
+    private string? _loadedFor;
+    private bool _loading = true;
+    private string? _error;
+    private List<CatalogItem> _subsets = [];
+    private List<SetMinifig> _minifigs = [];
+    private List<PartUse> _parts = [];
+    private List<PartUse> _spares = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == SetNumber)
+            return;
+
+        _loadedFor = SetNumber;
+        _loading = true;
+        _error = null;
+        try
+        {
+            var subsets = Contents.GetSetSubsetsAsync(SetNumber);
+            var minifigs = Contents.GetSetMinifigsAsync(SetNumber);
+            var parts = Contents.GetSetPartsAsync(SetNumber);
+
+            _subsets = await subsets;
+            _minifigs = await minifigs;
+            var all = await parts;
+            _parts = all.Where(p => !p.IsSpare).ToList();
+            _spares = all.Where(p => p.IsSpare).ToList();
+        }
+        catch (AppException ex)
+        {
+            _error = "Couldn't load what's in this set: " + ex.Message;
+        }
+        _loading = false;
+    }
+}

@@ -13,6 +13,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<CollectionService>();
 builder.Services.AddScoped<CatalogService>();
+builder.Services.AddScoped<ContentsService>();
 builder.Services.AddScoped<ToastService>();
 
 await builder.Build().RunAsync();

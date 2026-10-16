@@ -53,11 +53,11 @@ public partial class ItemCardView : ContentView
 
 		try
 		{
-			await Browser.Default.OpenAsync(model.Item.BrickLinkUrl, BrowserLaunchMode.External);
+			await Browser.Default.OpenAsync(model.Item.LinkUrl, BrowserLaunchMode.External);
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine("Couldn't open " + model.Item.BrickLinkUrl + ": " + ex.Message);
+			Debug.WriteLine("Couldn't open " + model.Item.LinkUrl + ": " + ex.Message);
 		}
 	}
 

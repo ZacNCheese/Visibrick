@@ -116,7 +116,7 @@ public partial class ItemDetailPage : ContentPage, IQueryAttributable
 	private async void OnNumberTapped(object? sender, TappedEventArgs e)
 	{
 		if (_item is not null)
-			await Browser.Default.OpenAsync(_item.BrickLinkUrl, BrowserLaunchMode.External);
+			await Browser.Default.OpenAsync(_item.LinkUrl, BrowserLaunchMode.External);
 	}
 
 	private async void OnAddClicked(object? sender, EventArgs e) => await SetQuantityAsync(1);

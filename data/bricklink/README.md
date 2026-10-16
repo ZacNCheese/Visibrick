@@ -1,6 +1,8 @@
 # BrickLink catalog files
 
-Visibrick's catalog (minifigs, sets, parts, gear and books) comes from BrickLink's catalog downloads.
+Visibrick's minifigs, gear and books come from BrickLink's catalog downloads. Sets and parts come from
+Rebrickable (see `data/rebrickable/README.md`); BrickLink's Sets and Parts files are optional, and if present they are
+only used to check which BrickLink numbers really exist.
 The `.txt` files in this folder are not committed to git; download fresh copies whenever you want to
 update the catalog. You only need to refresh the ones that changed.
 
@@ -12,8 +14,8 @@ update the catalog. You only need to refresh the ones that changed.
    | Item type on BrickLink | File |
    |---|---|
    | Minifigures | `Minifigures.txt` |
-   | Sets | `Sets.txt` |
-   | Parts | `Parts.txt` |
+   | Sets (optional, for checking) | `Sets.txt` |
+   | Parts (optional, for checking) | `Parts.txt` |
    | Gear | `Gear.txt` |
    | Books | `Books.txt` |
 

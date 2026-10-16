@@ -1,0 +1,66 @@
+@* A minifig's sets and the parts it's made of. From Rebrickable, linked by BrickLink number. *@
+@inject ContentsService Contents
+
+@if (_loading)
+{
+    <div class="center"><span class="spinner" aria-label="Loading"></span></div>
+}
+else if (_error is not null)
+{
+    <p class="error center">@_error</p>
+}
+else
+{
+    @if (_sets.Count > 0)
+    {
+        <section class="stack">
+            <div class="section-head"><h2>Appears in</h2><span class="caption">@_sets.Count @(_sets.Count == 1 ? "set" : "sets")</span></div>
+            <div class="card-grid">
+                @foreach (var set in _sets)
+                {
+                    <ItemCard Item="set" />
+                }
+            </div>
+        </section>
+    }
+
+    @if (_parts.Count > 0)
+    {
+        <section class="stack">
+            <div class="section-head"><h2>Made of</h2><span class="caption">@_parts.Sum(p => p.Quantity) pieces</span></div>
+            <PartGrid Parts="_parts" />
+        </section>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public string MinifigNumber { get; set; } = "";
+
+    private string? _loadedFor;
+    private bool _loading = true;
+    private string? _error;
+    private List<CatalogItem> _sets = [];
+    private List<PartUse> _parts = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == MinifigNumber)
+            return;
+
+        _loadedFor = MinifigNumber;
+        _loading = true;
+        _error = null;
+        try
+        {
+            var sets = Contents.GetMinifigSetsAsync(MinifigNumber);
+            var parts = Contents.GetMinifigPartsAsync(MinifigNumber);
+            _sets = await sets;
+            _parts = (await parts).Where(p => !p.IsSpare).ToList();
+        }
+        catch (AppException ex)
+        {
+            _error = "Couldn't load this minifig's sets and parts: " + ex.Message;
+        }
+        _loading = false;
+    }
+}

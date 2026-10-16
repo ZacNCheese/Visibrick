@@ -1,5 +1,5 @@
 @* One catalog item card: tap it to open the item, tap + to add it to your collection,
-   tap the number to open it on BrickLink. Used by the catalog lists and My Collection. *@
+   tap the number to open it on BrickLink (or Rebrickable, for sets and parts BrickLink doesn't have). Used by the catalog lists and My Collection. *@
 @inject AuthService Auth
 @inject CollectionService Collection
 @inject ToastService Toast
@@ -14,8 +14,8 @@
         </div>
         <div class="name" title="@Item.Name">@Item.Name</div>
         <div class="footer">
-            <span class="chip" title="Open on BrickLink" @onclick="OpenBrickLinkAsync" @onclick:preventDefault @onclick:stopPropagation>@Item.Number ↗</span>
-            <span class="caption">@Item.YearReleased</span>
+            <span class="chip" title="@(Item.HasBrickLinkPage ? "Open on BrickLink" : "Open on Rebrickable")" @onclick="OpenLinkAsync" @onclick:preventDefault @onclick:stopPropagation>@Item.Number ↗</span>
+            <span class="caption">@(Note ?? Item.YearReleased?.ToString())</span>
         </div>
     </a>
 
@@ -34,6 +34,9 @@
 
 @code {
     [Parameter, EditorRequired] public CatalogItem Item { get; set; } = default!;
+
+    // Shown instead of the year, e.g. "×2" for a minifig that comes twice in a set
+    [Parameter] public string? Note { get; set; }
 
     private int Quantity => Collection.QuantityOf(Item.Type, Item.Number);
 
@@ -56,6 +59,6 @@
         }
     }
 
-    private async Task OpenBrickLinkAsync()
-        => await JS.InvokeVoidAsync("open", Item.BrickLinkUrl, "_blank", "noopener");
+    private async Task OpenLinkAsync()
+        => await JS.InvokeVoidAsync("open", Item.LinkUrl, "_blank", "noopener");
 }
