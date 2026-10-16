@@ -6,7 +6,19 @@
 @inject CollectionService Collection
 @inject ToastService Toast
 
-@if (Tracking)
+@if (Sealed)
+{
+    <div class="tracking-bar clay-card">
+        <div class="stack" style="gap: 2px">
+            <strong>@(OwnerType == CatalogType.Sets.Code ? "Sealed" : "New")</strong>
+            <span class="caption">
+                @(OwnerType == CatalogType.Sets.Code ? "Every piece is in the box." : "Complete, as it came.")
+                Mark a copy as used above to track missing pieces.
+            </span>
+        </div>
+    </div>
+}
+else if (Tracking)
 {
     var need = Parts.Sum(p => p.Quantity) * Copies;
     var missing = Parts.Sum(Missing);
@@ -96,11 +108,18 @@
     private bool _showAll;
     private bool _onlyMissing;
 
-    private int Copies => OwnerType is null || OwnerNumber is null ? 0 : Collection.QuantityOf(OwnerType, OwnerNumber);
+    // Only used copies can be missing pieces; new (sealed) ones are complete
+    private int Copies => OwnerType is null || OwnerNumber is null ? 0 : Collection.UsedQuantityOf(OwnerType, OwnerNumber);
+
+    // Owned, but every copy is new
+    private bool Sealed => Auth.IsSignedIn && OwnerType is not null && OwnerNumber is not null
+        && Collection.QuantityOf(OwnerType, OwnerNumber) > 0 && Copies == 0;
 
     private bool Tracking => Auth.IsSignedIn && Copies > 0;
 
-    private int Missing(PartUse part) => Collection.MissingOf(OwnerType!, OwnerNumber!, part.PartNumber, part.ColorId);
+    // Never more than the used copies hold (e.g. after marking one of two copies new)
+    private int Missing(PartUse part)
+        => Math.Min(Collection.MissingOf(OwnerType!, OwnerNumber!, part.PartNumber, part.ColorId), part.Quantity * Copies);
 
     private IEnumerable<PartUse> Visible => Tracking && _onlyMissing ? Parts.Where(p => Missing(p) > 0) : Parts;
 

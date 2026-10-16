@@ -79,6 +79,35 @@
                             <button class="btn btn-primary" aria-label="One more" @onclick="() => SetQuantityAsync(quantity + 1)">+</button>
                         </div>
                     </div>
+                    @if (CollectionService.HasCondition(_item.Type))
+                    {
+                        var fresh = Collection.NewQuantityOf(_item.Type, _item.Number);
+                        var newLabel = _item.Type == CatalogType.Sets.Code ? "New (sealed)" : "New";
+
+                        @* New or used. Only used copies get missing-piece tracking below. *@
+                        <div class="row">
+                            <span class="muted">Condition</span>
+                            <div class="spacer"></div>
+                            @if (quantity == 1)
+                            {
+                                <div class="row" style="gap: 8px">
+                                    <button class="chip-btn @(fresh == 1 ? "selected" : "")" @onclick="() => SetNewAsync(1)">@newLabel</button>
+                                    <button class="chip-btn @(fresh == 0 ? "selected" : "")" @onclick="() => SetNewAsync(0)">Used</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="caption">@newLabel</span>
+                                <div class="stepper small">
+                                    <button class="btn btn-primary" aria-label="One fewer new" disabled="@(fresh == 0)" @onclick="() => SetNewAsync(fresh - 1)">−</button>
+                                    <span class="count" aria-live="polite">@fresh</span>
+                                    <button class="btn btn-primary" aria-label="One more new" disabled="@(fresh == quantity)" @onclick="() => SetNewAsync(fresh + 1)">+</button>
+                                </div>
+                                <span class="caption">· @(quantity - fresh) used</span>
+                            }
+                        </div>
+                    }
+
                     <button class="link-btn danger" style="align-self: center" @onclick="() => SetQuantityAsync(0)">Remove from my collection</button>
                 }
 
@@ -170,6 +199,19 @@
         try
         {
             await Collection.SetQuantityAsync(_item!.Type, _item.Number, Math.Max(0, quantity));
+        }
+        catch (AppException ex)
+        {
+            _message = ex.Message;
+        }
+    }
+
+    private async Task SetNewAsync(int newQuantity)
+    {
+        _message = null;
+        try
+        {
+            await Collection.SetNewQuantityAsync(_item!.Type, _item.Number, newQuantity);
         }
         catch (AppException ex)
         {

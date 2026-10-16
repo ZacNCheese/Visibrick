@@ -144,12 +144,13 @@ else
     // which no part number starts with) and this color id
     private const int MinifigColor = -1;
 
-    private int Copies => Collection.QuantityOf(CatalogType.Sets.Code, SetNumber);
+    // Only used copies can be missing minifigs; new (sealed) ones are complete
+    private int Copies => Collection.UsedQuantityOf(CatalogType.Sets.Code, SetNumber);
 
     private bool Tracking => Auth.IsSignedIn && Copies > 0;
 
     private int MissingFigs(SetMinifig fig)
-        => Collection.MissingOf(CatalogType.Sets.Code, SetNumber, fig.RebrickableNumber, MinifigColor);
+        => Math.Min(Collection.MissingOf(CatalogType.Sets.Code, SetNumber, fig.RebrickableNumber, MinifigColor), fig.Quantity * Copies);
 
     private async Task SetFigHaveAsync(SetMinifig fig, int have)
     {

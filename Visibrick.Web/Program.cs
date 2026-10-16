@@ -15,5 +15,6 @@ builder.Services.AddScoped<CollectionService>();
 builder.Services.AddScoped<CatalogService>();
 builder.Services.AddScoped<ContentsService>();
 builder.Services.AddScoped<ToastService>();
+builder.Services.AddScoped<PageMemory>();
 
 await builder.Build().RunAsync();

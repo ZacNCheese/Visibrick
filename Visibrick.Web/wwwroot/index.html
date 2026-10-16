@@ -42,6 +42,12 @@
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>
+        // List pages remember their own scroll position (PageMemory) and put it back once their items are on screen,
+        // so the browser shouldn't try to restore it first (it would scroll before the items are loaded).
+        history.scrollRestoration = 'manual';
+        window.visibrick = { scrollY: () => window.scrollY };
+    </script>
+    <script>
         // Offline support. When a new version of the site is uploaded, its service worker takes over and the page
         // reloads once to show it. (No reload on the very first visit, when there was no older version.)
         if ('serviceWorker' in navigator) {

@@ -4,6 +4,8 @@
 @inject CollectionService Collection
 @inject AuthService Auth
 @inject NavigationManager Navigation
+@inject PageMemory Memory
+@inject IJSRuntime JS
 
 @* One catalog type (/catalog/sets etc.): search, a grid of items, and "Load more". The search is kept in the
    address (?q=batman) so it survives a refresh and can be shared. *@
@@ -117,6 +119,9 @@ else
     private bool _loading;
     private string? _error;
     private string? _loadedFor;
+    private string? _memoryKey;
+    private double? _restoreScroll;
+    private IDisposable? _leaving;
     private int _generation;
     private CancellationTokenSource? _searchDelay;
 
@@ -137,6 +142,13 @@ else
     {
         Collection.Changed += OnCollectionChanged;
         _ = Collection.EnsureLoadedAsync();
+
+        // Leaving this list (to an item, another category...): remember what was loaded and the scroll position
+        _leaving = Navigation.RegisterLocationChangingHandler(async _ =>
+        {
+            if (_memoryKey is not null && _items.Count > 0)
+                Memory.Save(_memoryKey, new PageMemory.Snapshot([.. _items], _total, await JS.InvokeAsync<double>("visibrick.scrollY")));
+        });
     }
 
     // Runs on first visit and whenever the address changes (another type, or a new search)
@@ -148,9 +160,30 @@ else
             return;
 
         _loadedFor = key;
+        _memoryKey = Navigation.Uri;
         _items.Clear();
         _total = 0;
+
+        // Back to a list seen before: show what it had loaded and return to where it was scrolled
+        if (Memory.Get(_memoryKey) is { } saved)
+        {
+            _items.AddRange(saved.Items);
+            _total = saved.Total;
+            _restoreScroll = saved.ScrollY;
+            await LoadCategoriesAsync();
+            return;
+        }
+
         await Task.WhenAll(LoadMoreAsync(), LoadCategoriesAsync());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_restoreScroll is { } y && _items.Count > 0)
+        {
+            _restoreScroll = null;
+            await JS.InvokeVoidAsync("scrollTo", 0, y);
+        }
     }
 
     // The chip rows. If they can't load, the page still works without them.
@@ -229,5 +262,9 @@ else
 
     private void OnCollectionChanged() => InvokeAsync(StateHasChanged);
 
-    public void Dispose() => Collection.Changed -= OnCollectionChanged;
+    public void Dispose()
+    {
+        Collection.Changed -= OnCollectionChanged;
+        _leaving?.Dispose();
+    }
 }

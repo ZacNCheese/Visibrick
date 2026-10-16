@@ -4,6 +4,9 @@
 @inject AuthService Auth
 @inject CollectionService Collection
 @inject ProfileService Profile
+@inject NavigationManager Navigation
+@inject PageMemory Memory
+@inject IJSRuntime JS
 
 <PageTitle>My Collection · Visibrick</PageTitle>
 
@@ -32,18 +35,26 @@
     {
         <div class="toolbar">
             <div class="row" style="gap: 8px">
-                <button class="chip-btn @(_filter is null && !_onlyMissing ? "selected" : "")" @onclick="() => FilterAsync(null)">All · @_counts.Values.Sum(c => c.Items).ToString("N0")</button>
+                <button class="chip-btn @(_filter is null && _only == CollectionFilter.None ? "selected" : "")" @onclick="() => FilterAsync(null)">All · @_counts.Values.Sum(c => c.Items).ToString("N0")</button>
                 @foreach (var type in CatalogType.All.Where(t => _counts.ContainsKey(t.Code)))
                 {
-                    <button class="chip-btn @(_filter == type.Code && !_onlyMissing ? "selected" : "")" @onclick="() => FilterAsync(type.Code)">@type.Name · @_counts[type.Code].Items.ToString("N0")</button>
+                    <button class="chip-btn @(_filter == type.Code && _only == CollectionFilter.None ? "selected" : "")" @onclick="() => FilterAsync(type.Code)">@type.Name · @_counts[type.Code].Items.ToString("N0")</button>
                 }
-                @if (Collection.ItemsWithMissing > 0 || _onlyMissing)
+                @if (Collection.ItemsWithNew > 0)
                 {
-                    <button class="chip-btn missing @(_onlyMissing ? "selected" : "")" @onclick="ShowMissingAsync">Missing pieces · @Collection.ItemsWithMissing</button>
+                    <button class="chip-btn @(_only == CollectionFilter.New ? "selected" : "")" @onclick="() => ShowOnlyAsync(CollectionFilter.New)">New · @Collection.ItemsWithNew</button>
+                }
+                @if (Collection.ItemsWithNew > 0 && Collection.ItemsWithUsed > 0)
+                {
+                    <button class="chip-btn @(_only == CollectionFilter.Used ? "selected" : "")" @onclick="() => ShowOnlyAsync(CollectionFilter.Used)">Used · @Collection.ItemsWithUsed</button>
+                }
+                @if (Collection.ItemsWithMissing > 0)
+                {
+                    <button class="chip-btn missing @(_only == CollectionFilter.Missing ? "selected" : "")" @onclick="() => ShowOnlyAsync(CollectionFilter.Missing)">Missing pieces · @Collection.ItemsWithMissing</button>
                 }
             </div>
             <div class="input">
-                <input type="search" placeholder="Search your collection" aria-label="Search your collection" @oninput="OnSearchInput" />
+                <input type="search" placeholder="Search your collection" aria-label="Search your collection" value="@_search" @oninput="OnSearchInput" />
             </div>
         </div>
 
@@ -62,7 +73,7 @@
         <div class="card-grid">
             @foreach (var item in _items)
             {
-                <ItemCard @key="item.Key" Item="item" />
+                <ItemCard @key="item.Key" Item="item" Note="@ConditionNote(item)" />
             }
         </div>
 
@@ -73,7 +84,7 @@
             }
             else if (_items.Count < _total)
             {
-                <button class="btn btn-primary" @onclick="LoadMoreAsync">Load more</button>
+                <button class="btn btn-primary" @onclick="() => LoadMoreAsync()">Load more</button>
             }
         </div>
     }
@@ -88,7 +99,29 @@
     private bool _loading = true;
     private string? _error;
     private string? _filter;
-    private bool _onlyMissing;
+    private CollectionFilter _only;
+
+    // Remembering this page for Back (see PageMemory)
+    private const string MemoryKey = "collection";
+    private IDisposable? _leaving;
+    private double? _restoreScroll;
+    private int _loadedVersion;
+
+    // "New", "Used" or "1 new · 2 used" for sets and minifigs (in place of the year)
+    private string? ConditionNote(CatalogItem item)
+    {
+        if (!CollectionService.HasCondition(item.Type))
+            return null;
+
+        var fresh = Collection.NewQuantityOf(item.Type, item.Number);
+        var used = Collection.UsedQuantityOf(item.Type, item.Number);
+        return (fresh, used) switch
+        {
+            (0, _) => "Used",
+            (_, 0) => "New",
+            _ => $"{fresh} new · {used} used"
+        };
+    }
     private string? _search;
     private int _generation;
     private CancellationTokenSource? _searchDelay;
@@ -114,8 +147,49 @@
         Collection.Changed += OnChanged;
         Profile.Changed += OnRefresh;
 
+        // Leaving (e.g. to open an item): remember the filters, what was loaded and the scroll position
+        _leaving = Navigation.RegisterLocationChangingHandler(async _ =>
+        {
+            if (Auth.IsSignedIn && _items.Count > 0)
+                Memory.Save(MemoryKey, new PageMemory.Snapshot([.. _items], _total, await JS.InvokeAsync<double>("visibrick.scrollY"),
+                    _loadedVersion, _filter, _only, _search));
+        });
+
         await Auth.InitializeAsync();
+
+        // Back from an item: pick up where you were
+        if (Auth.IsSignedIn && Memory.Get(MemoryKey) is { } saved)
+        {
+            await Collection.EnsureLoadedAsync();
+            _counts = Collection.CountsByType();
+            (_filter, _only, _search) = (saved.Filter, saved.Only, saved.Search);
+            _restoreScroll = saved.ScrollY;
+
+            if (saved.Version == Collection.Version)
+            {
+                _items.AddRange(saved.Items);
+                _total = saved.Total;
+                _loadedVersion = saved.Version;
+                _loading = false;
+            }
+            else
+            {
+                // Something changed while you were away (e.g. you removed that item): reload as much as was showing
+                await LoadMoreAsync(Math.Max(PageSize, saved.Items.Count));
+            }
+            return;
+        }
+
         await ReloadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_restoreScroll is { } y && _items.Count > 0 && !_loading)
+        {
+            _restoreScroll = null;
+            await JS.InvokeVoidAsync("scrollTo", 0, y);
+        }
     }
 
     // Signed in/out, or the collection changed (e.g. something was removed on its item page)
@@ -143,14 +217,22 @@
         if (_filter is not null && !_counts.ContainsKey(_filter))
             _filter = null;
 
-        // Nothing is missing any more
-        if (_onlyMissing && Collection.ItemsWithMissing == 0)
-            _onlyMissing = false;
+        // The extra filter no longer has anything in it (e.g. the last missing piece was found)
+        var left = _only switch
+        {
+            CollectionFilter.Missing => Collection.ItemsWithMissing,
+            CollectionFilter.New => Collection.ItemsWithNew,
+            CollectionFilter.Used => Collection.ItemsWithUsed,
+            _ => 1
+        };
+        if (left == 0)
+            _only = CollectionFilter.None;
 
         await LoadMoreAsync();
     }
 
-    private async Task LoadMoreAsync()
+    // take: how many to load (more than a page when putting back a list that had been scrolled further)
+    private async Task LoadMoreAsync(int take = PageSize)
     {
         var generation = ++_generation;
         _loading = true;
@@ -159,11 +241,13 @@
 
         try
         {
-            var (rows, total) = await Collection.SearchAsync(_onlyMissing ? null : _filter, _search, _items.Count, PageSize, _onlyMissing);
+            var version = Collection.Version;
+            var (rows, total) = await Collection.SearchAsync(_only == CollectionFilter.None ? _filter : null, _search, _items.Count, take, _only);
             if (generation != _generation)
                 return;
 
             _items.AddRange(rows.Select(r => r.ToCatalogItem()));
+            _loadedVersion = version;
             _total = total;
         }
         catch (AppException ex)
@@ -182,15 +266,15 @@
     private async Task FilterAsync(string? type)
     {
         _filter = type;
-        _onlyMissing = false;
+        _only = CollectionFilter.None;
         _items.Clear();
         await LoadMoreAsync();
     }
 
-    // Sets and minifigs that are missing at least one piece
-    private async Task ShowMissingAsync()
+    // Sets and minifigs that are new, used, or missing at least one piece
+    private async Task ShowOnlyAsync(CollectionFilter only)
     {
-        _onlyMissing = true;
+        _only = only;
         _items.Clear();
         await LoadMoreAsync();
     }
@@ -218,5 +302,6 @@
         Auth.Changed -= OnChanged;
         Collection.Changed -= OnChanged;
         Profile.Changed -= OnRefresh;
+        _leaving?.Dispose();
     }
 }

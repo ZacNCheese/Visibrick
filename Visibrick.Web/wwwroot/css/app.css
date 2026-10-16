@@ -660,3 +660,8 @@ details[open] > summary.section-head { margin-bottom: 14px; }
 /* The sub-category row sits a little tighter under its parent row */
 .chip-scroll.sub { margin-top: -8px; }
 .chip-scroll.sub .chip-btn { height: 30px; font-size: 12.5px; }
+
+/* A smaller stepper, e.g. how many of the copies you own are new */
+.stepper.small { gap: 8px; }
+.stepper.small .btn { width: 36px; height: 36px; font-size: 18px; border-radius: 14px; }
+.stepper.small .count { min-width: 24px; font-size: 20px; }
